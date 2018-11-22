@@ -32,6 +32,12 @@
         android:text="@string/textBtnRTS"
         android:id="@+id/checkBoxRTS" />
 
+    <Button
+        android:id="@+id/btn_led"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="LED ON" />
+
     <View
         android:id="@+id/separator2"
         android:layout_width="match_parent"

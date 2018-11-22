@@ -37,5 +37,5 @@ dependencies {
 
     implementation 'com.github.felHR85:UsbSerial:5.0.0'
     implementation 'com.jakewharton.timber:timber:4.7.1'
-    compile project(path: ':seriallibrary')
+    implementation project(path: ':seriallibrary')
 }

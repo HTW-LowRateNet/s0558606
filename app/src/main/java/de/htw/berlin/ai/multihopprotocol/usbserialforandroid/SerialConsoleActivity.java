@@ -1,12 +1,15 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ScrollView;
@@ -48,6 +51,7 @@ public class SerialConsoleActivity extends Activity {
     private ScrollView mScrollView;
     private CheckBox chkDTR;
     private CheckBox chkRTS;
+    private Button btnLED;
 
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
 
@@ -81,6 +85,17 @@ public class SerialConsoleActivity extends Activity {
         mScrollView = (ScrollView) findViewById(R.id.demoScroller);
         chkDTR = (CheckBox) findViewById(R.id.checkBoxDTR);
         chkRTS = (CheckBox) findViewById(R.id.checkBoxRTS);
+        btnLED = findViewById(R.id.btn_led);
+        btnLED.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    sPort.write(new byte[]{'A', 'T', '+', 'P', 'B', '0', '=', '1', '\r', '\n'}, 1000);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
 
         chkDTR.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -125,6 +140,14 @@ public class SerialConsoleActivity extends Activity {
         theTextView.append(msg);
     }
 
+    /*
+     * Request user permission. The response will be received in the BroadcastReceiver
+     */
+    private void requestUserPermission() {
+        PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent("com.android.example.USB_PERMISSION"), 0);
+        ((UsbManager) getSystemService(Context.USB_SERVICE)).requestPermission(sPort.getDriver().getDevice(), mPendingIntent);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -134,6 +157,7 @@ public class SerialConsoleActivity extends Activity {
         } else {
             final UsbManager usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
 
+            requestUserPermission();
             UsbDeviceConnection connection = usbManager.openDevice(sPort.getDriver().getDevice());
             if (connection == null) {
                 mTitleTextView.setText("Opening device failed");

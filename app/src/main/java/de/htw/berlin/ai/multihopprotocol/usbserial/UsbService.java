@@ -23,7 +23,7 @@ import java.util.Map;
 
 import timber.log.Timber;
 
-public class UsbService extends Service {
+public class UsbService extends Service { // TODO implement as background service
 
     public static final String ACTION_USB_READY = "com.felhr.connectivityservices.USB_READY";
     public static final String ACTION_USB_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED";
@@ -39,7 +39,7 @@ public class UsbService extends Service {
     public static final int CTS_CHANGE = 1;
     public static final int DSR_CHANGE = 2;
     private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
-    private static final int BAUD_RATE = 9600; // BaudRate. Change this value if you need
+    private static final int BAUD_RATE = 115200; // BaudRate. Change this value if you need
     public static boolean SERVICE_CONNECTED = false;
 
     private IBinder binder = new UsbBinder();
@@ -166,7 +166,7 @@ public class UsbService extends Service {
     public void write(byte[] data) {
         if (serialPort != null) {
             Timber.d(new String(data));
-            serialPort.write(data);
+            serialPort.syncWrite(data, 1000);
         }
     }
 
@@ -240,7 +240,7 @@ public class UsbService extends Service {
         public void run() {
             serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
             if (serialPort != null) {
-                if (serialPort.open()) {
+                if (serialPort.syncOpen()) {
                     serialPortConnected = true;
                     serialPort.setBaudRate(BAUD_RATE);
                     serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
@@ -253,9 +253,9 @@ public class UsbService extends Service {
                      * UsbSerialInterface.FLOW_CONTROL_DSR_DTR only for CP2102 and FT232
                      */
                     serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-                    serialPort.read(mCallback);
-                    serialPort.getCTS(ctsCallback);
-                    serialPort.getDSR(dsrCallback);
+//                    serialPort.read(mCallback);
+//                    serialPort.getCTS(ctsCallback);
+//                    serialPort.getDSR(dsrCallback);
                     serialPort.debug(true);
 
                     new ReadThread().start();
