@@ -1,4 +1,4 @@
-package de.htw.berlin.ai.multihopprotocol;
+package de.htw.berlin.ai.multihopprotocol.usbserial;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -11,7 +11,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -20,6 +19,7 @@ import android.widget.Toast;
 import java.lang.ref.WeakReference;
 import java.util.Set;
 
+import de.htw.berlin.ai.multihopprotocol.R;
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
