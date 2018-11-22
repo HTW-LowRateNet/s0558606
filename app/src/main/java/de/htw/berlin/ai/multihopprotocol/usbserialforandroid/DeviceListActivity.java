@@ -28,6 +28,7 @@ import ai.berlin.htw.de.seriallibrary.driver.UsbSerialPort;
 import ai.berlin.htw.de.seriallibrary.driver.UsbSerialProber;
 import ai.berlin.htw.de.seriallibrary.util.HexDump;
 import de.htw.berlin.ai.multihopprotocol.R;
+import timber.log.Timber;
 
 /**
  * Shows a {@link ListView} of available USB devices.
@@ -70,6 +71,8 @@ public class DeviceListActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
+        Timber.plant(new Timber.DebugTree());
+
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
         mListView = (ListView) findViewById(R.id.deviceList);
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
@@ -106,18 +109,15 @@ public class DeviceListActivity extends Activity {
         };
         mListView.setAdapter(mAdapter);
 
-        mListView.setOnItemClickListener(new ListView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(TAG, "Pressed item " + position);
-                if (position >= mEntries.size()) {
-                    Log.w(TAG, "Illegal position.");
-                    return;
-                }
-
-                final UsbSerialPort port = mEntries.get(position);
-                showConsoleActivity(port);
+        mListView.setOnItemClickListener((parent, view, position, id) -> {
+            Timber.d("Pressed item " + position);
+            if (position >= mEntries.size()) {
+                Timber.tag(TAG).w("Illegal position.");
+                return;
             }
+
+            final UsbSerialPort port = mEntries.get(position);
+            showConsoleActivity(port);
         });
     }
 
@@ -139,7 +139,7 @@ public class DeviceListActivity extends Activity {
         new AsyncTask<Void, Void, List<UsbSerialPort>>() {
             @Override
             protected List<UsbSerialPort> doInBackground(Void... params) {
-                Log.d(TAG, "Refreshing device list ...");
+                Timber.d("Refreshing device list ...");
                 SystemClock.sleep(1000);
 
                 final List<UsbSerialDriver> drivers =
@@ -148,8 +148,7 @@ public class DeviceListActivity extends Activity {
                 final List<UsbSerialPort> result = new ArrayList<UsbSerialPort>();
                 for (final UsbSerialDriver driver : drivers) {
                     final List<UsbSerialPort> ports = driver.getPorts();
-                    Log.d(TAG, String.format("+ %s: %s port%s",
-                            driver, Integer.valueOf(ports.size()), ports.size() == 1 ? "" : "s"));
+                    Timber.d(String.format("+ %s: %s port%s", driver, Integer.valueOf(ports.size()), ports.size() == 1 ? "" : "s"));
                     result.addAll(ports);
                 }
 
@@ -161,10 +160,9 @@ public class DeviceListActivity extends Activity {
                 mEntries.clear();
                 mEntries.addAll(result);
                 mAdapter.notifyDataSetChanged();
-                mProgressBarTitle.setText(
-                        String.format("%s device(s) found", Integer.valueOf(mEntries.size())));
+                mProgressBarTitle.setText(String.format("%s device(s) found", Integer.valueOf(mEntries.size())));
                 hideProgressBar();
-                Log.d(TAG, "Done refreshing, " + mEntries.size() + " entries found.");
+                Timber.d("Done refreshing, " + mEntries.size() + " entries found.");
             }
 
         }.execute((Void) null);
@@ -180,7 +178,7 @@ public class DeviceListActivity extends Activity {
     }
 
     private void showConsoleActivity(UsbSerialPort port) {
-        SerialConsoleActivity.show(this, port);
+        SerialCommunicationActivity.show(this, port);
     }
 
 }

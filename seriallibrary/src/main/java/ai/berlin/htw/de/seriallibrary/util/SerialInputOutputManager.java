@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import ai.berlin.htw.de.seriallibrary.driver.UsbSerialPort;
+import timber.log.Timber;
 
 /**
  * Utility class which services a {@link UsbSerialPort} in its {@link #run()}
@@ -103,9 +104,15 @@ public class SerialInputOutputManager implements Runnable {
         }
     }
 
+    public void writeSync(byte[] data) throws IOException {
+        synchronized (mDriver) {
+            mDriver.write(data, 0);
+        }
+    }
+
     public synchronized void stop() {
         if (getState() == State.RUNNING) {
-            Log.i(TAG, "Stop requested");
+            Timber.i("Stop requested");
             mState = State.STOPPING;
         }
     }
@@ -129,17 +136,17 @@ public class SerialInputOutputManager implements Runnable {
             mState = State.RUNNING;
         }
 
-        Log.i(TAG, "Running ..");
+        Timber.i("Running ..");
         try {
             while (true) {
                 if (getState() != State.RUNNING) {
-                    Log.i(TAG, "Stopping mState=" + getState());
+                    Timber.i("Stopping mState=%s", getState());
                     break;
                 }
                 step();
             }
         } catch (Exception e) {
-            Log.w(TAG, "Run ending due to exception: " + e.getMessage(), e);
+            Timber.w(e, "Run ending due to exception: %s", e.getMessage());
             final Listener listener = getListener();
             if (listener != null) {
                 listener.onRunError(e);
@@ -147,7 +154,7 @@ public class SerialInputOutputManager implements Runnable {
         } finally {
             synchronized (this) {
                 mState = State.STOPPED;
-                Log.i(TAG, "Stopped.");
+                Timber.i("Stopped.");
             }
         }
     }
@@ -156,7 +163,7 @@ public class SerialInputOutputManager implements Runnable {
         // Handle incoming data.
         int len = mDriver.read(mReadBuffer.array(), READ_WAIT_MILLIS);
         if (len > 0) {
-            if (DEBUG) Log.d(TAG, "Read data len=" + len);
+            if (DEBUG) Timber.d("Read data len=%s", len);
             final Listener listener = getListener();
             if (listener != null) {
                 final byte[] data = new byte[len];
@@ -179,7 +186,7 @@ public class SerialInputOutputManager implements Runnable {
         }
         if (outBuff != null) {
             if (DEBUG) {
-                Log.d(TAG, "Writing data len=" + len);
+                Timber.d("Writing data len=%s", len);
             }
             mDriver.write(outBuff, READ_WAIT_MILLIS);
         }
