@@ -68,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private static final byte[] LINE_FEED = {'\r', '\n'};
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,10 +86,10 @@ public class MainActivity extends AppCompatActivity {
         btnSend.setOnClickListener(v -> {
             if (!etCommandInput.getText().toString().equals("")) {
                 String data = etCommandInput.getText().toString();
-                data += '\r';
-                data += '\n';
+
                 if (usbService != null) {
-                    usbService.write(data.getBytes() );
+                    usbService.write(data.getBytes());
+                    usbService.write(LINE_FEED);
                 }
             }
         });
