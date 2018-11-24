@@ -7,4 +7,5 @@
     <string name="textBtnRTS">RTS - Request To Send</string>
     <string name="textBtnDTR">DTR - Data Terminal Ready</string>
     <string name="title_activity_serial_communication">SerialCommunicationActivity</string>
+    <string name="title_activity_multi_hop">MultiHopActivity</string>
 </resources>

@@ -51,6 +51,16 @@
             android:name=".usbserialforandroid.SerialCommunicationActivity"
             android:label="@string/title_activity_serial_communication"
             android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".usbserialforandroid.MultiHopActivity"
+            android:label="@string/title_activity_multi_hop"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
