@@ -15,6 +15,7 @@ import android.widget.TextView;
 import ai.berlin.htw.de.seriallibrary.driver.UsbSerialPort;
 import de.htw.berlin.ai.multihopprotocol.R;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.LoraTransceiver;
+import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.TransceiverDevice;
 import timber.log.Timber;
 
 public class SerialCommunicationActivity extends AppCompatActivity {
@@ -27,7 +28,7 @@ public class SerialCommunicationActivity extends AppCompatActivity {
     private ScrollView scrollView;
     private Button btnSend;
 
-    private LoraTransceiver loraTransceiver;
+    private TransceiverDevice loraTransceiver;
 
 
     @Override

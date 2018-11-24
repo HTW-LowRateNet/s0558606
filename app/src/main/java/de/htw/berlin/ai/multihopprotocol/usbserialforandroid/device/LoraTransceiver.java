@@ -1,5 +1,6 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device;
 
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
@@ -14,7 +15,7 @@ import ai.berlin.htw.de.seriallibrary.driver.UsbSerialPort;
 import ai.berlin.htw.de.seriallibrary.util.SerialInputOutputManager;
 import timber.log.Timber;
 
-public class LoraTransceiver implements MultihopDevice {
+public class LoraTransceiver implements TransceiverDevice {
 
     private static final byte[] LINE_FEED = {'\r', '\n'};
 
@@ -139,11 +140,7 @@ public class LoraTransceiver implements MultihopDevice {
         this.messageCallback = messageCallback;
     }
 
-    public MutableLiveData<ConnectionStatus> getConnectionStatus() {
+    public LiveData<ConnectionStatus> getConnectionStatus() {
         return connectionStatus;
-    }
-
-    public enum ConnectionStatus {
-        NO_DEVICE, OPENING_FAILED, READY, RUNNING, STOPPED;
     }
 }

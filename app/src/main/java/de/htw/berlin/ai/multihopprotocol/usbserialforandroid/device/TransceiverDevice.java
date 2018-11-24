@@ -1,6 +1,8 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device;
 
-public interface MultihopDevice {
+import android.arch.lifecycle.LiveData;
+
+public interface TransceiverDevice {
 
     void send(String message);
 
@@ -9,4 +11,6 @@ public interface MultihopDevice {
     void start();
 
     void stop();
+
+    LiveData<ConnectionStatus> getConnectionStatus();
 }
