@@ -39,7 +39,7 @@ public class LoraTransceiver implements MultihopDevice {
             for (byte aByte : data) {
                 receivedDataBuffer.add((char) aByte);
             }
-            Timber.d("Current databuffer state: %s", receivedDataBuffer.toString());
+            Timber.d("Current data buffer state: %s", receivedDataBuffer.toString());
 
             StringBuilder stringBuilder = new StringBuilder();
             for (char aChar : receivedDataBuffer) {
@@ -58,11 +58,13 @@ public class LoraTransceiver implements MultihopDevice {
         this.usbManager = usbManager;
     }
 
+    @Override
     public void start() {
         openPort();
         startIoManager();
     }
 
+    @Override
     public void stop() {
         stopIoManager();
         closePort();
@@ -122,6 +124,7 @@ public class LoraTransceiver implements MultihopDevice {
         }
     }
 
+    @Override
     public void send(String data) {
         try {
             serialInputOutputManager.writeSync(data.getBytes());
@@ -131,16 +134,13 @@ public class LoraTransceiver implements MultihopDevice {
         }
     }
 
+    @Override
     public void setMessageCallback(MessageCallback messageCallback) {
         this.messageCallback = messageCallback;
     }
 
     public MutableLiveData<ConnectionStatus> getConnectionStatus() {
         return connectionStatus;
-    }
-
-    public interface MessageCallback {
-        void onMessageReceived(String message);
     }
 
     public enum ConnectionStatus {
