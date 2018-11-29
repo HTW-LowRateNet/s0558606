@@ -6,8 +6,6 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -17,42 +15,26 @@ import timber.log.Timber;
 
 public class LoraTransceiver implements TransceiverDevice {
 
-    private static final byte[] LINE_FEED = {'\r', '\n'};
+    static final byte[] LINE_FEED = {'\r', '\n'};
 
     private SerialInputOutputManager serialInputOutputManager;
-    private MessageCallback messageCallback;
+    private MessageCallback networkMessageCallback;
+    private MessageCallback serialMessageCallback = new MessageCallback() {
+        @Override
+        public void onMessageReceived(String message) {
+            networkMessageCallback.onMessageReceived(message);
+//            if (message.startsWith("LR")){
+//                networkMessageCallback.onMessageReceived(message);
+//            }
+        }
+    };
     private UsbSerialPort serialPort;
     private UsbManager usbManager;
 
+    private SerialInputOutputManager.Listener listener = new LoraSerialListener(serialMessageCallback);
+
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private MutableLiveData<ConnectionStatus> connectionStatus = new MutableLiveData<>();
-
-    private List<Character> receivedDataBuffer = new ArrayList<>();
-
-    private final SerialInputOutputManager.Listener listener = new SerialInputOutputManager.Listener() {
-        @Override
-        public void onRunError(Exception e) {
-            Timber.d("Runner stopped.");
-        }
-
-        @Override
-        public void onNewData(final byte[] data) {
-            for (byte aByte : data) {
-                receivedDataBuffer.add((char) aByte);
-            }
-            Timber.d("Current data buffer state: %s", receivedDataBuffer.toString());
-
-            StringBuilder stringBuilder = new StringBuilder();
-            for (char aChar : receivedDataBuffer) {
-                stringBuilder.append(aChar);
-
-                if (stringBuilder.toString().contains(new String(LINE_FEED))) {
-                    messageCallback.onMessageReceived(stringBuilder.toString());
-                    receivedDataBuffer.clear(); // might be critical when different threads call onnewdata
-                }
-            }
-        }
-    };
 
     public LoraTransceiver(UsbSerialPort serialPort, UsbManager usbManager) {
         this.serialPort = serialPort;
@@ -63,6 +45,7 @@ public class LoraTransceiver implements TransceiverDevice {
     public void start() {
         openPort();
         startIoManager();
+        configure();
     }
 
     @Override
@@ -77,6 +60,10 @@ public class LoraTransceiver implements TransceiverDevice {
             serialInputOutputManager = new SerialInputOutputManager(serialPort, listener);
             executorService.submit(serialInputOutputManager);
         }
+    }
+
+    private void configure() {
+        writeSerial("AT+CFG=433000000,20,9,10,1,1,0,0,0,0,3000,8,4");
     }
 
     private void stopIoManager() {
@@ -127,6 +114,12 @@ public class LoraTransceiver implements TransceiverDevice {
 
     @Override
     public void send(String data) {
+        int length = data.getBytes().length;
+        writeSerial("AT+SEND=" + length);
+        writeSerial(data);
+    }
+
+    public void writeSerial(String data) {
         try {
             serialInputOutputManager.writeSync(data.getBytes());
             serialInputOutputManager.writeSync(LINE_FEED);
@@ -137,7 +130,11 @@ public class LoraTransceiver implements TransceiverDevice {
 
     @Override
     public void setMessageCallback(MessageCallback messageCallback) {
-        this.messageCallback = messageCallback;
+        this.networkMessageCallback = messageCallback;
+    }
+
+    public void setSerialMessageCallback(MessageCallback serialMessageCallback) {
+        this.serialMessageCallback = serialMessageCallback;
     }
 
     public LiveData<ConnectionStatus> getConnectionStatus() {

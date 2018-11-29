@@ -21,8 +21,6 @@
 
 package ai.berlin.htw.de.seriallibrary.util;
 
-import android.util.Log;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -106,7 +104,7 @@ public class SerialInputOutputManager implements Runnable {
 
     public void writeSync(byte[] data) throws IOException {
         synchronized (mDriver) {
-            mDriver.write(data, 0);
+            mDriver.write(data, 300);
         }
     }
 
