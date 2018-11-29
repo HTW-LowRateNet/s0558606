@@ -66,6 +66,10 @@ public class LoraTransceiver implements TransceiverDevice {
         writeSerial("AT+CFG=433000000,20,9,10,1,1,0,0,0,0,3000,8,4");
     }
 
+    private void resetCommand() {
+        writeSerial("AT+RST");
+    }
+
     private void stopIoManager() {
         if (serialInputOutputManager != null) {
             Timber.i("Stopping io manager ..");
