@@ -4,6 +4,8 @@ import android.arch.lifecycle.LiveData;
 
 public interface TransceiverDevice {
 
+    void setAddress(int address);
+
     void send(String message);
 
     void addListener(NetworkMessageListener listener);

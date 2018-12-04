@@ -1,15 +1,15 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages;
 
-public class CoordinatorDiscoveryMessage extends MultihopMessage {
+public class CoordinatorAliveMessage extends MultihopMessage {
 
-    public static final String CODE = "KDIS";
+    public static final String CODE = "ALIV";
 
-    public CoordinatorDiscoveryMessage(String payload, int TTL, int hoppedNodes) {
+    public CoordinatorAliveMessage(String payload, int TTL, int hoppedNodes) {
         super(payload, TTL, hoppedNodes);
         code = CODE;
     }
 
-    public CoordinatorDiscoveryMessage(String message) throws NumberFormatException {
+    public CoordinatorAliveMessage(String message) throws NumberFormatException {
         super(message);
     }
 

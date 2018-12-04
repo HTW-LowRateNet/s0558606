@@ -4,9 +4,15 @@ import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address.Ad
 
 public class TextMessage extends MultihopMessage {
 
-    public TextMessage(String message, Address targetAddress, int messageID, int TTL, int hoppedNodes) {
-        super(Integer.toString(targetAddress.getAddress()) + "+" + message, messageID, TTL, hoppedNodes);
-        code = "MSSG";
+    public static final String CODE = "MSSG";
+
+    public TextMessage(String message, Address targetAddress, int TTL, int hoppedNodes) {
+        super(Integer.toString(targetAddress.getAddress()) + "+" + message, TTL, hoppedNodes);
+        code = CODE;
+    }
+
+    public TextMessage(String message) throws NumberFormatException {
+        super(message);
     }
 
     @Override

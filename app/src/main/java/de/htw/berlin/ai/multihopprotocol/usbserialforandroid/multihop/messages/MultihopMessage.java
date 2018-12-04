@@ -1,6 +1,8 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages;
 
-public abstract class MultihopMessage {
+import java.util.Random;
+
+public class MultihopMessage {
 
     protected String code;
     protected String payload;
@@ -22,12 +24,40 @@ public abstract class MultihopMessage {
         payload = strings[7];
     }
 
-    public MultihopMessage(String payload, int messageID, int TTL, int hoppedNodes) {
+    public MultihopMessage(String payload, int TTL, int hoppedNodes) {
         this.payload = payload;
-        this.messageID = messageID;
         this.TTL = TTL;
         this.hoppedNodes = hoppedNodes;
+
+        messageID = generateMessageID();
     }
 
-    public abstract String createStringMessage();
+    private int generateMessageID() {
+        Random random = new Random();
+        return random.nextInt();
+    }
+
+    public String createStringMessage() {
+        return code + "," + messageID + "," + TTL + "," + hoppedNodes + "," + payload;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public int getMessageID() {
+        return messageID;
+    }
+
+    public int getTTL() {
+        return TTL;
+    }
+
+    public int getHoppedNodes() {
+        return hoppedNodes;
+    }
 }

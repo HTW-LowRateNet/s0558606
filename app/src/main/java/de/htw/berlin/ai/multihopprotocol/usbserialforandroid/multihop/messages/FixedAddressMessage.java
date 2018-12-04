@@ -4,9 +4,15 @@ import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address.Ad
 
 public class FixedAddressMessage extends MultihopMessage {
 
-    public FixedAddressMessage(Address fixedAddress, int messageID, int TTL, int hoppedNodes) {
-        super(Integer.toString(fixedAddress.getAddress()), messageID, TTL, hoppedNodes);
-        code = "ADDR";
+    public static final String CODE = "ADDR";
+
+    public FixedAddressMessage(Address fixedAddress, int TTL, int hoppedNodes) {
+        super(Integer.toString(fixedAddress.getAddress()), TTL, hoppedNodes);
+        code = CODE;
+    }
+
+    public FixedAddressMessage(String message) throws NumberFormatException {
+        super(message);
     }
 
     @Override

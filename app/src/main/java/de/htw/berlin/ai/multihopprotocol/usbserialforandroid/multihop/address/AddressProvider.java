@@ -1,5 +1,6 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address;
 
+import java.util.Collection;
 import java.util.Random;
 
 public class AddressProvider {
@@ -44,6 +45,22 @@ public class AddressProvider {
         fixedAddresses.addAddress(newAddress);
 
         return newAddress;
+    }
+
+    public boolean addFixedAddress(Address address) {
+        return fixedAddresses.addAddress(address);
+    }
+
+    public boolean addTempAddress(Address address) {
+        return temporaryAddresses.addAddress(address);
+    }
+
+    public Collection<Address> getFixedAddresses() {
+        return fixedAddresses.getAllAddresses();
+    }
+
+    public Collection<Address> getTempAddresses() {
+        return temporaryAddresses.getAllAddresses();
     }
 
     public Address getCoordinatorAddress() {

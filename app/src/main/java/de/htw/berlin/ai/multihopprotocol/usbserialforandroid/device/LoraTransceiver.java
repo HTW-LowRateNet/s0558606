@@ -128,6 +128,26 @@ public class LoraTransceiver implements TransceiverDevice {
     }
 
     @Override
+    public void setAddress(int address) {
+        StringBuilder hexAddress = new StringBuilder(Integer.toHexString(131));
+        while (hexAddress.length() < 4) {
+            hexAddress.insert(0, "0");
+        }
+        Timber.d("Setting address to %s", hexAddress.toString());
+        writeSerial(SET_ADDRESS_COMMAND + "=" + hexAddress, new WriteSerialRunnable.Callback() {
+            @Override
+            public void onSerialWriteSuccess() {
+                Timber.d("Setting address successful");
+            }
+
+            @Override
+            public void onSerialWriteFailure() {
+                Timber.d("Setting address failed");
+            }
+        });
+    }
+
+    @Override
     public void send(String data) {
         String startSendingCommand = "AT+SEND=" + data.getBytes().length;
 
