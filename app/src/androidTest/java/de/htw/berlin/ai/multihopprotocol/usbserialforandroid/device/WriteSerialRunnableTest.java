@@ -32,6 +32,11 @@ public class WriteSerialRunnableTest {
             public void onSerialWriteSuccess() {
                 success = true;
             }
+
+            @Override
+            public void onSerialWriteFailure() {
+                success = false;
+            }
         });
 
         Thread thread = new Thread(writeSerialRunnable);
@@ -55,6 +60,11 @@ public class WriteSerialRunnableTest {
             @Override
             public void onSerialWriteSuccess() {
                 success = true;
+            }
+
+            @Override
+            public void onSerialWriteFailure() {
+                success = false;
             }
         });
 
@@ -85,6 +95,11 @@ public class WriteSerialRunnableTest {
             @Override
             public void onSerialWriteSuccess() {
                 success = true;
+            }
+
+            @Override
+            public void onSerialWriteFailure() {
+                success = false;
             }
         });
 

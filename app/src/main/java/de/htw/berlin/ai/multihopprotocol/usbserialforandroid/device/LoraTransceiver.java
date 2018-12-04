@@ -19,6 +19,14 @@ import timber.log.Timber;
 public class LoraTransceiver implements TransceiverDevice {
 
     private static final byte[] LINE_FEED = {'\r', '\n'};
+    private static final String RESET_COMMAND = "AT+RST";
+    private static final String SET_ADDRESS_COMMAND = "AT+ADDR"; // =FFFF
+    private static final String GET_ADDRESS_COMMAND = "AT+ADDR?";
+    private static final String SET_DESTINATION_COMMAND = "AT+DEST"; // =FFFF
+    private static final String GET_DESTINATION_COMMAND = "AT+DEST?";
+    private static final String SAVE_COMMAND = "AT+SAVE";
+    private static final String CONFIGURATION_COMMAND = "AT+CFG=433000000,20,9,10,1,1,0,0,0,0,3000,8,4";
+    private static final String RECEIVE_COMMAND = "AT+RX";
 
     private List<NetworkMessageListener> networkMessageListeners;
     private List<SerialMessageListener> serialMessageListeners;
@@ -70,7 +78,7 @@ public class LoraTransceiver implements TransceiverDevice {
     }
 
     private void configure() {
-        new Handler().postDelayed(() -> writeSerial("AT+CFG=433000000,20,9,10,1,1,0,0,0,0,3000,8,4"), 500);
+        new Handler().postDelayed(() -> writeSerial(CONFIGURATION_COMMAND), 500);
     }
 
     private void stopIoManager() {
@@ -123,11 +131,29 @@ public class LoraTransceiver implements TransceiverDevice {
     public void send(String data) {
         String startSendingCommand = "AT+SEND=" + data.getBytes().length;
 
-        executorService.execute(new WriteSerialRunnable(LoraTransceiver.this, startSendingCommand, () ->
-                executorService.execute(new WriteSerialRunnable(LoraTransceiver.this, data, () -> {
-                    Timber.d("Finished sending of message: %s", data);
-                }))));
+        writeSerial(startSendingCommand, new WriteSerialRunnable.Callback() {
+            @Override
+            public void onSerialWriteSuccess() {
+                writeSerial(data, new WriteSerialRunnable.Callback() {
+                    @Override
+                    public void onSerialWriteSuccess() {
+                        Timber.d("Finished sending of message: %s", data);
+                    }
+
+                    @Override
+                    public void onSerialWriteFailure() {
+                        Timber.d("Sending of message '%s' failed", data);
+                    }
+                });
+            }
+
+            @Override
+            public void onSerialWriteFailure() {
+                Timber.d("Sending of message '%s' failed", data);
+            }
+        });
     }
+
 
     public void writeSerial(String data) {
         try {
@@ -136,6 +162,10 @@ public class LoraTransceiver implements TransceiverDevice {
         } catch (IOException e) {
             Timber.e(e);
         }
+    }
+
+    public void writeSerial(String data, WriteSerialRunnable.Callback callback) {
+        executorService.execute(new WriteSerialRunnable(this, data, callback));
     }
 
     public LiveData<ConnectionStatus> getConnectionStatus() {

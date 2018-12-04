@@ -6,14 +6,18 @@ import timber.log.Timber;
 
 /**
  * Ensures that AT commands are received properly by transceiver.
- * If error responds with error, runnable will try until response is OK.
+ * If module responds with error, runnable will try until response is OK.
  */
 public class WriteSerialRunnable implements Runnable {
 
-
     interface Callback {
         void onSerialWriteSuccess();
+
+        void onSerialWriteFailure();
     }
+
+    private static final int MAX_RETRY_COUNT = 10;
+    private int retryCount = 0;
 
     private final String command;
     private final LoraTransceiver loraTransceiver;
@@ -55,10 +59,16 @@ public class WriteSerialRunnable implements Runnable {
                 resetCommand();
             }
 
-        } while (!lastSerialMessage.equals("AT,OK"));
+            retryCount++;
+        } while (!lastSerialMessage.equals("AT,OK") && retryCount <= MAX_RETRY_COUNT);
 
         loraTransceiver.removeListener(listener);
-        callback.onSerialWriteSuccess();
+
+        if (retryCount <= MAX_RETRY_COUNT) {
+            callback.onSerialWriteSuccess();
+        } else {
+            callback.onSerialWriteFailure();
+        }
     }
 
     private void sendSerial(String command) {
