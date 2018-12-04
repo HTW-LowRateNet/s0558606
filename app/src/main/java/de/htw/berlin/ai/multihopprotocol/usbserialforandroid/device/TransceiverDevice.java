@@ -6,7 +6,9 @@ public interface TransceiverDevice {
 
     void send(String message);
 
-    void setMessageCallback(MessageCallback messageCallback);
+    void addListener(NetworkMessageListener listener);
+
+    void removeListener(NetworkMessageListener listener);
 
     void start();
 

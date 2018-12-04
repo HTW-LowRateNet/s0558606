@@ -15,6 +15,7 @@ import android.widget.TextView;
 import ai.berlin.htw.de.seriallibrary.driver.UsbSerialPort;
 import de.htw.berlin.ai.multihopprotocol.R;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.LoraTransceiver;
+import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.SerialMessageListener;
 import timber.log.Timber;
 
 public class SerialCommunicationActivity extends AppCompatActivity {
@@ -38,7 +39,7 @@ public class SerialCommunicationActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         loraTransceiver = new LoraTransceiver(sPort, (UsbManager) getSystemService(Context.USB_SERVICE));
-        loraTransceiver.setSerialMessageCallback(this::updateReceivedData);
+        loraTransceiver.addListener((SerialMessageListener) this::updateReceivedData);
 
         loraTransceiver.getConnectionStatus().observe(this, connectionStatus -> {
             if (connectionStatus != null) {

@@ -6,6 +6,8 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -17,28 +19,31 @@ public class LoraTransceiver implements TransceiverDevice {
 
     static final byte[] LINE_FEED = {'\r', '\n'};
 
+    private List<NetworkMessageListener> networkMessageListeners;
+    private List<SerialMessageListener> serialMessageListeners;
+
     private SerialInputOutputManager serialInputOutputManager;
-    private MessageCallback networkMessageCallback;
-    private MessageCallback serialMessageCallback = new MessageCallback() {
-        @Override
-        public void onMessageReceived(String message) {
-            networkMessageCallback.onMessageReceived(message);
-//            if (message.startsWith("LR")){
-//                networkMessageCallback.onMessageReceived(message);
-//            }
+    private MessageCallback serialMessageCallback = message -> {
+        notifySerialMessageListeners(message);
+        if (message.startsWith("LR")) {
+            notifyNetworkMessageListeners(message);
         }
     };
+
     private UsbSerialPort serialPort;
     private UsbManager usbManager;
 
     private SerialInputOutputManager.Listener listener = new LoraSerialListener(serialMessageCallback);
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
     private MutableLiveData<ConnectionStatus> connectionStatus = new MutableLiveData<>();
 
     public LoraTransceiver(UsbSerialPort serialPort, UsbManager usbManager) {
         this.serialPort = serialPort;
         this.usbManager = usbManager;
+
+        networkMessageListeners = new ArrayList<>();
+        serialMessageListeners = new ArrayList<>();
     }
 
     @Override
@@ -132,16 +137,35 @@ public class LoraTransceiver implements TransceiverDevice {
         }
     }
 
-    @Override
-    public void setMessageCallback(MessageCallback messageCallback) {
-        this.networkMessageCallback = messageCallback;
-    }
-
-    public void setSerialMessageCallback(MessageCallback serialMessageCallback) {
-        this.serialMessageCallback = serialMessageCallback;
-    }
-
     public LiveData<ConnectionStatus> getConnectionStatus() {
         return connectionStatus;
+    }
+
+    public void addListener(NetworkMessageListener listener) {
+        networkMessageListeners.add(listener);
+    }
+
+    public void addListener(SerialMessageListener listener) {
+        serialMessageListeners.add(listener);
+    }
+
+    public void removeListener(NetworkMessageListener listener) {
+        networkMessageListeners.remove(listener);
+    }
+
+    public void removeListener(SerialMessageListener listener) {
+        serialMessageListeners.remove(listener);
+    }
+
+    private void notifyNetworkMessageListeners(String networkMessage) {
+        for (NetworkMessageListener listener : networkMessageListeners) {
+            listener.onMessageReceived(networkMessage);
+        }
+    }
+
+    private void notifySerialMessageListeners(String serialMessage) {
+        for (SerialMessageListener listener : serialMessageListeners) {
+            listener.onMessageReceived(serialMessage);
+        }
     }
 }
