@@ -4,6 +4,7 @@ import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+import android.os.Handler;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,13 +18,14 @@ import timber.log.Timber;
 
 public class LoraTransceiver implements TransceiverDevice {
 
-    static final byte[] LINE_FEED = {'\r', '\n'};
+    private static final byte[] LINE_FEED = {'\r', '\n'};
 
     private List<NetworkMessageListener> networkMessageListeners;
     private List<SerialMessageListener> serialMessageListeners;
 
     private SerialInputOutputManager serialInputOutputManager;
-    private MessageCallback serialMessageCallback = message -> {
+
+    MessageCallback serialMessageCallback = message -> {
         notifySerialMessageListeners(message);
         if (message.startsWith("LR")) {
             notifyNetworkMessageListeners(message);
@@ -68,7 +70,7 @@ public class LoraTransceiver implements TransceiverDevice {
     }
 
     private void configure() {
-        writeSerial("AT+CFG=433000000,20,9,10,1,1,0,0,0,0,3000,8,4");
+        new Handler().postDelayed(() -> writeSerial("AT+CFG=433000000,20,9,10,1,1,0,0,0,0,3000,8,4"), 500);
     }
 
     private void resetCommand() {
