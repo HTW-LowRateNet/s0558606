@@ -73,10 +73,6 @@ public class LoraTransceiver implements TransceiverDevice {
         new Handler().postDelayed(() -> writeSerial("AT+CFG=433000000,20,9,10,1,1,0,0,0,0,3000,8,4"), 500);
     }
 
-    private void resetCommand() {
-        writeSerial("AT+RST");
-    }
-
     private void stopIoManager() {
         if (serialInputOutputManager != null) {
             Timber.i("Stopping io manager ..");
@@ -125,9 +121,12 @@ public class LoraTransceiver implements TransceiverDevice {
 
     @Override
     public void send(String data) {
-        int length = data.getBytes().length;
-        writeSerial("AT+SEND=" + length);
-        writeSerial(data);
+        String startSendingCommand = "AT+SEND=" + data.getBytes().length;
+
+        executorService.execute(new WriteSerialRunnable(LoraTransceiver.this, startSendingCommand, () ->
+                executorService.execute(new WriteSerialRunnable(LoraTransceiver.this, data, () -> {
+                    Timber.d("Finished sending of message: %s", data);
+                }))));
     }
 
     public void writeSerial(String data) {

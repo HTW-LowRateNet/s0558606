@@ -16,15 +16,23 @@ public class WriteSerialRunnableTest {
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
+    private boolean success;
+
     @Before
     public void setUp() throws Exception {
         loraTransceiver = Mockito.mock(LoraTransceiver.class);
+        success = false;
     }
 
     @Test
     public void testSuccessOnFirstTry() throws InterruptedException {
         String messageToSend = "TestMessage";
-        WriteSerialRunnable writeSerialRunnable = new WriteSerialRunnable(loraTransceiver, messageToSend);
+        WriteSerialRunnable writeSerialRunnable = new WriteSerialRunnable(loraTransceiver, messageToSend, new WriteSerialRunnable.Callback() {
+            @Override
+            public void onSerialWriteSuccess() {
+                success = true;
+            }
+        });
 
         Thread thread = new Thread(writeSerialRunnable);
         thread.start();
@@ -36,13 +44,19 @@ public class WriteSerialRunnableTest {
 
         // assume thread ends
         Thread.sleep(1000);
+        assertTrue(success);
         assertFalse(thread.isAlive());
     }
 
     @Test
     public void testSuccessOnSecondTry() throws InterruptedException {
         String messageToSend = "TestMessage";
-        WriteSerialRunnable writeSerialRunnable = new WriteSerialRunnable(loraTransceiver, messageToSend);
+        WriteSerialRunnable writeSerialRunnable = new WriteSerialRunnable(loraTransceiver, messageToSend, new WriteSerialRunnable.Callback() {
+            @Override
+            public void onSerialWriteSuccess() {
+                success = true;
+            }
+        });
 
         Thread thread = new Thread(writeSerialRunnable);
         thread.start();
@@ -54,18 +68,25 @@ public class WriteSerialRunnableTest {
 
         // assume thread staying alive waiting for next serial message
         Thread.sleep(1000);
+        assertFalse(success);
         assertTrue(thread.isAlive());
 
         writeSerialRunnable.listener.onMessageReceived("AT,OK");
 
         Thread.sleep(1000);
+        assertTrue(success);
         assertFalse(thread.isAlive());
     }
 
     @Test
     public void testSuccessOnThirdTry() throws InterruptedException {
         String messageToSend = "TestMessage";
-        WriteSerialRunnable writeSerialRunnable = new WriteSerialRunnable(loraTransceiver, messageToSend);
+        WriteSerialRunnable writeSerialRunnable = new WriteSerialRunnable(loraTransceiver, messageToSend, new WriteSerialRunnable.Callback() {
+            @Override
+            public void onSerialWriteSuccess() {
+                success = true;
+            }
+        });
 
         Thread thread = new Thread(writeSerialRunnable);
         thread.start();
@@ -77,17 +98,20 @@ public class WriteSerialRunnableTest {
 
         // assume thread staying alive waiting for next serial message
         Thread.sleep(1000);
+        assertFalse(success);
         assertTrue(thread.isAlive());
 
         writeSerialRunnable.listener.onMessageReceived("LR, bla");
 
         // assume thread staying alive waiting for next serial message
         Thread.sleep(1000);
+        assertFalse(success);
         assertTrue(thread.isAlive());
 
         writeSerialRunnable.listener.onMessageReceived("AT,OK");
 
         Thread.sleep(1000);
+        assertTrue(success);
         assertFalse(thread.isAlive());
     }
 }

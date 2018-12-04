@@ -10,8 +10,14 @@ import timber.log.Timber;
  */
 public class WriteSerialRunnable implements Runnable {
 
-    private final String data;
+
+    interface Callback {
+        void onSerialWriteSuccess();
+    }
+
+    private final String command;
     private final LoraTransceiver loraTransceiver;
+    private final Callback callback;
 
     private String lastSerialMessage;
 
@@ -24,9 +30,10 @@ public class WriteSerialRunnable implements Runnable {
         }
     };
 
-    public WriteSerialRunnable(LoraTransceiver loraTransceiver, String data) {
+    public WriteSerialRunnable(LoraTransceiver loraTransceiver, String command, Callback callback) {
         this.loraTransceiver = loraTransceiver;
-        this.data = data;
+        this.command = command;
+        this.callback = callback;
     }
 
     @Override
@@ -34,9 +41,10 @@ public class WriteSerialRunnable implements Runnable {
         loraTransceiver.addListener(listener);
 
         do {
-            sendSerial(data);
+            sendSerial(command);
 
             try {
+                // wait for serial message
                 semaphore.acquire();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -50,6 +58,7 @@ public class WriteSerialRunnable implements Runnable {
         } while (!lastSerialMessage.equals("AT,OK"));
 
         loraTransceiver.removeListener(listener);
+        callback.onSerialWriteSuccess();
     }
 
     private void sendSerial(String command) {
