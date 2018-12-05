@@ -4,7 +4,9 @@ import android.arch.lifecycle.LiveData;
 
 public interface TransceiverDevice {
 
-    void setAddress(int address);
+    void setDestinationAddress(int address);
+
+    void setSelfAddress(int address);
 
     void send(String message);
 

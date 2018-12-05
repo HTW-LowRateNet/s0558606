@@ -21,7 +21,10 @@ public class MultihopMessage {
         messageID = Integer.parseInt(strings[4]);
         TTL = Integer.parseInt(strings[5]);
         hoppedNodes = Integer.parseInt(strings[6]);
-        payload = strings[7];
+        if (strings.length == 8)
+            payload = strings[7];
+        else
+            payload = null;
     }
 
     public MultihopMessage(String payload, int TTL, int hoppedNodes) {

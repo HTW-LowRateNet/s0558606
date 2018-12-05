@@ -128,21 +128,41 @@ public class LoraTransceiver implements TransceiverDevice {
     }
 
     @Override
-    public void setAddress(int address) {
-        StringBuilder hexAddress = new StringBuilder(Integer.toHexString(131));
+    public void setDestinationAddress(int address) {
+        StringBuilder hexAddress = new StringBuilder(Integer.toHexString(address));
         while (hexAddress.length() < 4) {
             hexAddress.insert(0, "0");
         }
-        Timber.d("Setting address to %s", hexAddress.toString());
-        writeSerial(SET_ADDRESS_COMMAND + "=" + hexAddress, new WriteSerialRunnable.Callback() {
+        Timber.d("Setting destination address to %s", hexAddress.toString());
+        writeSerial(SET_DESTINATION_COMMAND + "=" + hexAddress, new WriteSerialRunnable.Callback() {
             @Override
             public void onSerialWriteSuccess() {
-                Timber.d("Setting address successful");
+                Timber.d("Setting destination address successful");
             }
 
             @Override
             public void onSerialWriteFailure() {
-                Timber.d("Setting address failed");
+                Timber.d("Setting destination address failed");
+            }
+        });
+    }
+
+    @Override
+    public void setSelfAddress(int address) {
+        StringBuilder hexAddress = new StringBuilder(Integer.toHexString(address));
+        while (hexAddress.length() < 4) {
+            hexAddress.insert(0, "0");
+        }
+        Timber.d("Setting own address to %s", hexAddress.toString());
+        writeSerial(SET_ADDRESS_COMMAND + "=" + hexAddress, new WriteSerialRunnable.Callback() {
+            @Override
+            public void onSerialWriteSuccess() {
+                Timber.d("Setting own address successful");
+            }
+
+            @Override
+            public void onSerialWriteFailure() {
+                Timber.d("Setting own address failed");
             }
         });
     }

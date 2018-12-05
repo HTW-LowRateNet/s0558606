@@ -1,5 +1,8 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MutableLiveData;
+
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.NetworkMessageListener;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.TransceiverDevice;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address.Address;
@@ -20,6 +23,8 @@ public class MultihopProtocol {
     private boolean coordinator;
     private boolean running;
 
+    private MutableLiveData<ProtocolState> protocolState;
+
     AddressProvider addressProvider = new AddressProvider();
 
     TransceiverDevice transceiverDevice;
@@ -30,6 +35,8 @@ public class MultihopProtocol {
         this.transceiverDevice = transceiverDevice;
         running = true;
         coordinator = false;
+
+        protocolState = new MutableLiveData<>();
     }
 
     public void start() {
@@ -63,12 +70,16 @@ public class MultihopProtocol {
     private void decideBecomingCoordinator() {
         if (addressProvider.getFixedAddresses().size() == 0) {
             coordinator = true;
+            protocolState.postValue(ProtocolState.SELF_COORDINATOR);
         } else {
             coordinator = false;
+            protocolState.postValue(ProtocolState.COORDINATOR_KNOWN);
         }
     }
 
     public void startDiscovery() {
+        protocolState.postValue(ProtocolState.COORDINATOR_DISCOVERY);
+
         currentNetworkMessageListener = stringMessage -> {
             MultihopMessage message = new MultihopMessage(stringMessage);
             if (message.getCode().equals(NeighborDiscoveryMessage.CODE)) {
@@ -82,14 +93,14 @@ public class MultihopProtocol {
 
         NeighborDiscoveryMessage coordinatorDiscoveryMessage = new NeighborDiscoveryMessage("", 10, 0);
 
-        transceiverDevice.setAddress(addressProvider.getBroadcastAddress().getAddress());
+        transceiverDevice.setDestinationAddress(addressProvider.getBroadcastAddress().getAddress());
         transceiverDevice.send(coordinatorDiscoveryMessage.createStringMessage());
     }
 
 
     private void sendCoordinatorKeepAlive() {
         CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", 10, 0);
-        transceiverDevice.setAddress(addressProvider.getBroadcastAddress().getAddress());
+        transceiverDevice.setDestinationAddress(addressProvider.getBroadcastAddress().getAddress());
         transceiverDevice.send(coordinatorAliveMessage.createStringMessage());
     }
 
@@ -149,5 +160,9 @@ public class MultihopProtocol {
 
     public void stop() {
         running = false;
+    }
+
+    public LiveData<ProtocolState> getProtocolState() {
+        return protocolState;
     }
 }
