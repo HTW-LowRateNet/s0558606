@@ -14,9 +14,10 @@ import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.M
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.NeighborDiscoveryMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.TextMessage;
 
-public class MultihopProtocol {
+public class MultihopProtocol implements Runnable {
 
-    enum ProtocolState {
+
+    public enum ProtocolState {
         COORDINATOR_DISCOVERY, SELF_COORDINATOR, COORDINATOR_KNOWN;
     }
 
@@ -39,7 +40,9 @@ public class MultihopProtocol {
         protocolState = new MutableLiveData<>();
     }
 
-    public void start() {
+
+    @Override
+    public void run() {
         initNetwork();
 
         startMessageHandling();
@@ -47,12 +50,16 @@ public class MultihopProtocol {
         while (running) {
             if (coordinator) {
                 sendCoordinatorKeepAlive();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             } else {
                 // TODO
             }
         }
     }
-
 
     private void initNetwork() {
         startDiscovery();

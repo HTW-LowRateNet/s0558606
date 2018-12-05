@@ -1,10 +1,13 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid;
 
 import android.app.PendingIntent;
+import android.arch.lifecycle.Observer;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.Button;
@@ -29,8 +32,8 @@ public class MultiHopActivity extends AppCompatActivity {
     private static UsbSerialPort sPort = null;
 
     private TextView tvConsoleText;
-    private TextView tvUsbStatus;
-    private EditText etCommand;
+    private TextView tvUsbStatus, tvProtocolStatus;
+    private EditText etMessage;
     private ScrollView scrollView;
     private Button btnSend;
 
@@ -58,20 +61,40 @@ public class MultiHopActivity extends AppCompatActivity {
             }
         });
 
+        multihopProtocol.getProtocolState().observe(this, new Observer<MultihopProtocol.ProtocolState>() {
+            @Override
+            public void onChanged(@Nullable MultihopProtocol.ProtocolState protocolState) {
+                tvProtocolStatus.setText(protocolState.toString());
+            }
+        });
+
         requestUserPermission();
 
         scrollView = findViewById(R.id.demoScroller);
         tvConsoleText = findViewById(R.id.consoleText);
         tvUsbStatus = findViewById(R.id.tv_usb_status);
-        etCommand = findViewById(R.id.et_console_input);
+        tvProtocolStatus = findViewById(R.id.tv_protocol_status);
+        etMessage = findViewById(R.id.et_message_input);
         btnSend = findViewById(R.id.btn_send);
         btnSend.setOnClickListener(v -> {
-            if (!etCommand.getText().toString().equals("")) {
-                String data = etCommand.getText().toString().trim();
+            if (!etMessage.getText().toString().equals("")) {
+                String data = etMessage.getText().toString().trim();
 
                 transceiverDevice.send(data);
             }
         });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                new Thread(multihopProtocol).start();
+            }
+        }, 500);
+
     }
 
     @Override
@@ -89,7 +112,6 @@ public class MultiHopActivity extends AppCompatActivity {
     }
 
     private void requestUserPermission() {
-        //  TODO refactor permission request
         PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent("com.android.example.USB_PERMISSION"), 0);
         ((UsbManager) getSystemService(Context.USB_SERVICE)).requestPermission(sPort.getDriver().getDevice(), mPendingIntent);
     }

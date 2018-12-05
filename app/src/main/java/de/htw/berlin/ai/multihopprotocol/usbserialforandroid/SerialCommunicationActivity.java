@@ -52,7 +52,7 @@ public class SerialCommunicationActivity extends AppCompatActivity {
         scrollView = findViewById(R.id.demoScroller);
         tvConsoleText = findViewById(R.id.consoleText);
         tvUsbStatus = findViewById(R.id.tv_usb_status);
-        etCommand = findViewById(R.id.et_console_input);
+        etCommand = findViewById(R.id.et_message_input);
         btnSend = findViewById(R.id.btn_send);
         btnSend.setOnClickListener(v -> {
             if (!etCommand.getText().toString().equals("")) {
