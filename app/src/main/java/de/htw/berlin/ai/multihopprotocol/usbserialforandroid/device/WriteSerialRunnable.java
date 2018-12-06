@@ -56,18 +56,7 @@ public class WriteSerialRunnable implements Runnable {
             }
 
             if (lastSerialMessage.contains("ERR")) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 resetCommand();
-
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
 
             retryCount++;

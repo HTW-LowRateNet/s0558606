@@ -48,6 +48,8 @@ public class LoraTransceiver implements TransceiverDevice {
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private MutableLiveData<ConnectionStatus> connectionStatus = new MutableLiveData<>();
 
+    private final Object sendingLock = new Object();
+
     public LoraTransceiver(UsbSerialPort serialPort, UsbManager usbManager) {
         this.serialPort = serialPort;
         this.usbManager = usbManager;
@@ -168,34 +170,38 @@ public class LoraTransceiver implements TransceiverDevice {
     }
 
     @Override
-    public synchronized void send(String data) {
-        String startSendingCommand = "AT+SEND=" + data.getBytes().length;
+    public void send(String data) {
+        synchronized (sendingLock) {
+            String startSendingCommand = "AT+SEND=" + data.getBytes().length;
 
-        writeSerial(startSendingCommand, new WriteSerialRunnable.Callback() {
-            @Override
-            public void onSerialWriteSuccess() {
-                writeSerial(data, new WriteSerialRunnable.Callback() {
-                    @Override
-                    public void onSerialWriteSuccess() {
-                        Timber.d("Finished sending of message: %s", data);
-                    }
+            writeSerial(startSendingCommand, new WriteSerialRunnable.Callback() {
+                @Override
+                public void onSerialWriteSuccess() {
+                    writeSerial(data, new WriteSerialRunnable.Callback() {
+                        @Override
+                        public void onSerialWriteSuccess() {
+                            Timber.d("Finished sending of message: %s", data);
+                            sendingLock.notifyAll();
+                        }
 
-                    @Override
-                    public void onSerialWriteFailure() {
-                        Timber.d("Sending of message '%s' failed", data);
-                    }
-                });
-            }
+                        @Override
+                        public void onSerialWriteFailure() {
+                            Timber.d("Sending of message '%s' failed", data);
+                            sendingLock.notifyAll();
+                        }
+                    });
+                }
 
-            @Override
-            public void onSerialWriteFailure() {
-                Timber.d("Sending of message '%s' failed", data);
-            }
-        });
+                @Override
+                public void onSerialWriteFailure() {
+                    Timber.d("Sending of message '%s' failed", data);
+                }
+            });
+        }
     }
 
 
-    public synchronized void writeSerial(String data) {
+    public void writeSerial(String data) {
         try {
             serialInputOutputManager.writeSync(data.getBytes());
             Timber.d("Writing to serial: %s", data);
@@ -206,7 +212,9 @@ public class LoraTransceiver implements TransceiverDevice {
     }
 
     public void writeSerial(String data, WriteSerialRunnable.Callback callback) {
-        executorService.execute(new WriteSerialRunnable(this, data, callback));
+        synchronized (sendingLock) {
+            executorService.execute(new WriteSerialRunnable(this, data, callback));
+        }
     }
 
     public LiveData<ConnectionStatus> getConnectionStatus() {

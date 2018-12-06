@@ -44,6 +44,7 @@ public class MultihopProtocol {
     public void start() {
         running = true;
         initNetwork();
+        transceiverDevice.setDestinationAddress(addressProvider.getBroadcastAddress().getAddress());
 
         startMessageHandling();
         startCoordinatorThread();
@@ -98,14 +99,12 @@ public class MultihopProtocol {
 
         NeighborDiscoveryMessage coordinatorDiscoveryMessage = new NeighborDiscoveryMessage("", 10, 0);
 
-        transceiverDevice.setDestinationAddress(addressProvider.getBroadcastAddress().getAddress());
         transceiverDevice.send(coordinatorDiscoveryMessage.createStringMessage());
-        Timber.d("CoordinatorDiscoveryMessage: " + coordinatorDiscoveryMessage.createStringMessage());
+        Timber.d("CoordinatorDiscoveryMessage: %s", coordinatorDiscoveryMessage.createStringMessage());
     }
 
     private void sendCoordinatorKeepAlive() {
         CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", 10, 0);
-        transceiverDevice.setDestinationAddress(addressProvider.getBroadcastAddress().getAddress());
         transceiverDevice.send(coordinatorAliveMessage.createStringMessage());
     }
 
