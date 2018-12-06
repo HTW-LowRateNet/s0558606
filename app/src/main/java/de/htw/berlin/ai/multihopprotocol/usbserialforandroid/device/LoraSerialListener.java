@@ -26,11 +26,12 @@ public class LoraSerialListener implements SerialInputOutputManager.Listener {
         putDataToBuffer(data);
 
         for (Integer index : getLineFeedPositionsInBuffer()) {
-            List<Character> messageCharacterList = receivedDataBuffer.subList(0, index);
-            String message = getStringFromCharacterList(messageCharacterList);
-            messageCallback.onMessageReceived(message);
-
-            receivedDataBuffer.removeAll(messageCharacterList);
+            if (index <= receivedDataBuffer.size()) {
+                List<Character> messageCharacterList = receivedDataBuffer.subList(0, index);
+                String message = getStringFromCharacterList(messageCharacterList);
+                messageCallback.onMessageReceived(message);
+                receivedDataBuffer.removeAll(messageCharacterList);
+            }
         }
     }
 

@@ -8,4 +8,6 @@
     <string name="textBtnDTR">DTR - Data Terminal Ready</string>
     <string name="title_activity_serial_communication">SerialCommunicationActivity</string>
     <string name="title_activity_multi_hop">MultiHopActivity</string>
+    <string name="title_activity_device_list">DeviceListActivity</string>
+    <string name="title_activity_usbservice">USBService</string>
 </resources>

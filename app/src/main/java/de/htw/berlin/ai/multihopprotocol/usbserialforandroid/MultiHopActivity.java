@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -35,11 +34,10 @@ public class MultiHopActivity extends AppCompatActivity {
     private TextView tvUsbStatus, tvProtocolStatus;
     private EditText etMessage;
     private ScrollView scrollView;
-    private Button btnSend;
+    private Button btnSend, btnConnect;
 
     private MultihopProtocol multihopProtocol;
     private TransceiverDevice transceiverDevice;
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -47,6 +45,8 @@ public class MultiHopActivity extends AppCompatActivity {
         setContentView(R.layout.activity_multi_hop);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        Timber.plant(new Timber.DebugTree());
 
         sPort = findSerialPort();
 
@@ -75,6 +75,8 @@ public class MultiHopActivity extends AppCompatActivity {
         tvUsbStatus = findViewById(R.id.tv_usb_status);
         tvProtocolStatus = findViewById(R.id.tv_protocol_status);
         etMessage = findViewById(R.id.et_message_input);
+        btnConnect = findViewById(R.id.btn_connect);
+        btnConnect.setOnClickListener(v -> startProtocol());
         btnSend = findViewById(R.id.btn_send);
         btnSend.setOnClickListener(v -> {
             if (!etMessage.getText().toString().equals("")) {
@@ -83,18 +85,6 @@ public class MultiHopActivity extends AppCompatActivity {
                 transceiverDevice.send(data);
             }
         });
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                new Thread(multihopProtocol).start();
-            }
-        }, 500);
-
     }
 
     @Override
@@ -111,11 +101,20 @@ public class MultiHopActivity extends AppCompatActivity {
         transceiverDevice.stop();
     }
 
+    private void startProtocol() {
+        stopProtocol();
+
+        multihopProtocol.start();
+    }
+
+    private void stopProtocol() {
+        multihopProtocol.stop();
+    }
+
     private void requestUserPermission() {
         PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent("com.android.example.USB_PERMISSION"), 0);
         ((UsbManager) getSystemService(Context.USB_SERVICE)).requestPermission(sPort.getDriver().getDevice(), mPendingIntent);
     }
-
 
     private void onDeviceStateChange() {
         transceiverDevice.stop();

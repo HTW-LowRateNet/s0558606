@@ -168,7 +168,7 @@ public class LoraTransceiver implements TransceiverDevice {
     }
 
     @Override
-    public void send(String data) {
+    public synchronized void send(String data) {
         String startSendingCommand = "AT+SEND=" + data.getBytes().length;
 
         writeSerial(startSendingCommand, new WriteSerialRunnable.Callback() {
@@ -195,9 +195,10 @@ public class LoraTransceiver implements TransceiverDevice {
     }
 
 
-    public void writeSerial(String data) {
+    public synchronized void writeSerial(String data) {
         try {
             serialInputOutputManager.writeSync(data.getBytes());
+            Timber.d("Writing to serial: %s", data);
             serialInputOutputManager.writeSync(LINE_FEED);
         } catch (IOException e) {
             Timber.e(e);

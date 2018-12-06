@@ -10,7 +10,7 @@ import timber.log.Timber;
  */
 public class WriteSerialRunnable implements Runnable {
 
-    interface Callback {
+    public interface Callback {
         void onSerialWriteSuccess();
 
         void onSerialWriteFailure();
@@ -55,12 +55,23 @@ public class WriteSerialRunnable implements Runnable {
                 Timber.e(e, "Error in WriteSerialRunnable");
             }
 
-            if (lastSerialMessage.startsWith("ERR")) {
+            if (lastSerialMessage.contains("ERR")) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 resetCommand();
+
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
             retryCount++;
-        } while (!lastSerialMessage.equals("AT,OK") && retryCount <= MAX_RETRY_COUNT);
+        } while (!lastSerialMessage.contains("AT,OK") && retryCount <= MAX_RETRY_COUNT);
 
         loraTransceiver.removeListener(listener);
 

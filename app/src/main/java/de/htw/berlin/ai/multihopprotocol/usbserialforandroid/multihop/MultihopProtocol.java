@@ -13,9 +13,9 @@ import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.F
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.MultihopMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.NeighborDiscoveryMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.TextMessage;
+import timber.log.Timber;
 
-public class MultihopProtocol implements Runnable {
-
+public class MultihopProtocol {
 
     public enum ProtocolState {
         COORDINATOR_DISCOVERY, SELF_COORDINATOR, COORDINATOR_KNOWN;
@@ -32,33 +32,26 @@ public class MultihopProtocol implements Runnable {
 
     NetworkMessageListener currentNetworkMessageListener;
 
+    private Thread coordinatorThread;
+
     public MultihopProtocol(TransceiverDevice transceiverDevice) {
         this.transceiverDevice = transceiverDevice;
-        running = true;
         coordinator = false;
 
         protocolState = new MutableLiveData<>();
     }
 
-
-    @Override
-    public void run() {
+    public void start() {
+        running = true;
         initNetwork();
 
         startMessageHandling();
+        startCoordinatorThread();
+    }
 
-        while (running) {
-            if (coordinator) {
-                sendCoordinatorKeepAlive();
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                // TODO
-            }
-        }
+    private void startCoordinatorThread() {
+        coordinatorThread = new Thread(new CoordinatorHandler());
+        coordinatorThread.start();
     }
 
     private void initNetwork() {
@@ -76,12 +69,17 @@ public class MultihopProtocol implements Runnable {
 
     private void decideBecomingCoordinator() {
         if (addressProvider.getFixedAddresses().size() == 0) {
-            coordinator = true;
-            protocolState.postValue(ProtocolState.SELF_COORDINATOR);
+            becomeCoordinator();
         } else {
             coordinator = false;
             protocolState.postValue(ProtocolState.COORDINATOR_KNOWN);
         }
+    }
+
+    private void becomeCoordinator() {
+        transceiverDevice.setSelfAddress(0x0000);
+        coordinator = true;
+        protocolState.postValue(ProtocolState.SELF_COORDINATOR);
     }
 
     public void startDiscovery() {
@@ -102,8 +100,8 @@ public class MultihopProtocol implements Runnable {
 
         transceiverDevice.setDestinationAddress(addressProvider.getBroadcastAddress().getAddress());
         transceiverDevice.send(coordinatorDiscoveryMessage.createStringMessage());
+        Timber.d("CoordinatorDiscoveryMessage: " + coordinatorDiscoveryMessage.createStringMessage());
     }
-
 
     private void sendCoordinatorKeepAlive() {
         CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", 10, 0);
@@ -111,9 +109,29 @@ public class MultihopProtocol implements Runnable {
         transceiverDevice.send(coordinatorAliveMessage.createStringMessage());
     }
 
+    class CoordinatorHandler implements Runnable {
+        @Override
+        public void run() {
+            while (running) {
+                if (coordinator) {
+                    sendCoordinatorKeepAlive();
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    // TODO
+                }
+            }
+        }
+    }
+
     private void startMessageHandling() {
         currentNetworkMessageListener = stringMessage -> {
             MultihopMessage multihopMessage = new MultihopMessage(stringMessage);
+
+            Timber.d("New message received: %s", stringMessage);
 
             switch (multihopMessage.getCode()) {
                 case CoordinatorAliveMessage.CODE:
@@ -164,8 +182,9 @@ public class MultihopProtocol implements Runnable {
 
     }
 
-
     public void stop() {
+        if (coordinatorThread != null && !coordinatorThread.isInterrupted())
+            coordinatorThread.interrupt();
         running = false;
     }
 
