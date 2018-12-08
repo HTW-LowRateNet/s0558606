@@ -9,6 +9,8 @@ import android.os.Handler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -48,6 +50,10 @@ public class LoraTransceiver implements TransceiverDevice {
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private MutableLiveData<ConnectionStatus> connectionStatus = new MutableLiveData<>();
 
+    private Thread serialCommandThread;
+    private Runnable writeSerialRunnable;
+    private BlockingQueue serialCommandQueue;
+
     private final Object sendingLock = new Object();
 
     public LoraTransceiver(UsbSerialPort serialPort, UsbManager usbManager) {
@@ -56,19 +62,38 @@ public class LoraTransceiver implements TransceiverDevice {
 
         networkMessageListeners = new ArrayList<>();
         serialMessageListeners = new ArrayList<>();
+        serialCommandQueue = new ArrayBlockingQueue<String>(20, true);
+
+        writeSerialRunnable = new SerialWriterRunnable(this, serialCommandQueue);
     }
 
     @Override
     public void start() {
         openPort();
         startIoManager();
+        startSerialCommandThread();
         configure();
     }
 
     @Override
     public void stop() {
+        stopSerialCommandThread();
         stopIoManager();
         closePort();
+    }
+
+    private void startSerialCommandThread() {
+        if (serialCommandThread == null || !serialCommandThread.isAlive()) {
+            serialCommandThread = new Thread(writeSerialRunnable);
+        }
+        serialCommandThread.start();
+    }
+
+    private void stopSerialCommandThread() {
+        if (serialCommandThread != null && serialCommandThread.isAlive()) {
+            serialCommandThread.interrupt();
+            serialCommandThread = null;
+        }
     }
 
     private void startIoManager() {
@@ -80,7 +105,7 @@ public class LoraTransceiver implements TransceiverDevice {
     }
 
     private void configure() {
-        new Handler().postDelayed(() -> writeSerial(CONFIGURATION_COMMAND), 500);
+        new Handler().postDelayed(() -> enqueueCommand(CONFIGURATION_COMMAND), 500);
     }
 
     private void stopIoManager() {
@@ -135,18 +160,8 @@ public class LoraTransceiver implements TransceiverDevice {
         while (hexAddress.length() < 4) {
             hexAddress.insert(0, "0");
         }
+        enqueueCommand(SET_DESTINATION_COMMAND + "=" + hexAddress);
         Timber.d("Setting destination address to %s", hexAddress.toString());
-        writeSerial(SET_DESTINATION_COMMAND + "=" + hexAddress, new WriteSerialRunnable.Callback() {
-            @Override
-            public void onSerialWriteSuccess() {
-                Timber.d("Setting destination address successful");
-            }
-
-            @Override
-            public void onSerialWriteFailure() {
-                Timber.d("Setting destination address failed");
-            }
-        });
     }
 
     @Override
@@ -155,51 +170,27 @@ public class LoraTransceiver implements TransceiverDevice {
         while (hexAddress.length() < 4) {
             hexAddress.insert(0, "0");
         }
-        Timber.d("Setting own address to %s", hexAddress.toString());
-        writeSerial(SET_ADDRESS_COMMAND + "=" + hexAddress, new WriteSerialRunnable.Callback() {
-            @Override
-            public void onSerialWriteSuccess() {
-                Timber.d("Setting own address successful");
-            }
+        enqueueCommand(SET_ADDRESS_COMMAND + "=" + hexAddress);
 
-            @Override
-            public void onSerialWriteFailure() {
-                Timber.d("Setting own address failed");
-            }
-        });
+        Timber.d("Setting own address to %s", hexAddress.toString());
     }
 
     @Override
     public void send(String data) {
-        synchronized (sendingLock) {
-            String startSendingCommand = "AT+SEND=" + data.getBytes().length;
+        String startSendingCommand = "AT+SEND=" + data.getBytes().length;
 
-            writeSerial(startSendingCommand, new WriteSerialRunnable.Callback() {
-                @Override
-                public void onSerialWriteSuccess() {
-                    writeSerial(data, new WriteSerialRunnable.Callback() {
-                        @Override
-                        public void onSerialWriteSuccess() {
-                            Timber.d("Finished sending of message: %s", data);
-                            sendingLock.notifyAll();
-                        }
-
-                        @Override
-                        public void onSerialWriteFailure() {
-                            Timber.d("Sending of message '%s' failed", data);
-                            sendingLock.notifyAll();
-                        }
-                    });
-                }
-
-                @Override
-                public void onSerialWriteFailure() {
-                    Timber.d("Sending of message '%s' failed", data);
-                }
-            });
-        }
+        enqueueCommand(startSendingCommand);
+        enqueueCommand(data);
     }
 
+    public void enqueueCommand(String command) {
+        try {
+            serialCommandQueue.put(command);
+        } catch (InterruptedException e) {
+            Timber.e(e, "SerialCommandQueue is full");
+            e.printStackTrace();
+        }
+    }
 
     public void writeSerial(String data) {
         try {
@@ -208,12 +199,6 @@ public class LoraTransceiver implements TransceiverDevice {
             serialInputOutputManager.writeSync(LINE_FEED);
         } catch (IOException e) {
             Timber.e(e);
-        }
-    }
-
-    public void writeSerial(String data, WriteSerialRunnable.Callback callback) {
-        synchronized (sendingLock) {
-            executorService.execute(new WriteSerialRunnable(this, data, callback));
         }
     }
 

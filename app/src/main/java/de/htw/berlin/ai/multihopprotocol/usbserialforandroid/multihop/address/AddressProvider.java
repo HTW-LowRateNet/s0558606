@@ -21,6 +21,8 @@ public class AddressProvider {
     private AddressBook temporaryAddresses;
     private AddressBook fixedAddresses;
 
+    private Address selfAddress;
+
     public AddressProvider() {
         temporaryAddresses = new AddressBook();
         fixedAddresses = new AddressBook();
@@ -71,5 +73,11 @@ public class AddressProvider {
         return new Address(BROADCAST_ADDRESS);
     }
 
+    public Address getSelfAddress() {
+        return selfAddress;
+    }
 
+    public void setSelfAddress(Address selfAddress) {
+        this.selfAddress = selfAddress;
+    }
 }

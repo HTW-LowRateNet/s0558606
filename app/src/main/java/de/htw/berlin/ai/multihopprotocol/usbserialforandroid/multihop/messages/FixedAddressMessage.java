@@ -6,8 +6,8 @@ public class FixedAddressMessage extends MultihopMessage {
 
     public static final String CODE = "ADDR";
 
-    public FixedAddressMessage(Address fixedAddress, int TTL, int hoppedNodes) {
-        super(Integer.toString(fixedAddress.getAddress()), TTL, hoppedNodes);
+    public FixedAddressMessage(String payload, int TTL, int hoppedNodes, Address originalSourceAddress, Address targetAddress) {
+        super(payload, TTL, hoppedNodes, originalSourceAddress, targetAddress);
         code = CODE;
     }
 
@@ -15,8 +15,4 @@ public class FixedAddressMessage extends MultihopMessage {
         super(message);
     }
 
-    @Override
-    public String createStringMessage() {
-        return code + "," + messageID + "," + TTL + "," + hoppedNodes + "," + payload;
-    }
 }

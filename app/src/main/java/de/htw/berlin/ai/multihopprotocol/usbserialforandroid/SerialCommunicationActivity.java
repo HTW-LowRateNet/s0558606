@@ -16,7 +16,6 @@ import ai.berlin.htw.de.seriallibrary.driver.UsbSerialPort;
 import de.htw.berlin.ai.multihopprotocol.R;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.LoraTransceiver;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.SerialMessageListener;
-import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.WriteSerialRunnable;
 import timber.log.Timber;
 
 public class SerialCommunicationActivity extends AppCompatActivity {
@@ -59,17 +58,7 @@ public class SerialCommunicationActivity extends AppCompatActivity {
             if (!etCommand.getText().toString().equals("")) {
                 String data = etCommand.getText().toString().trim();
 
-                loraTransceiver.writeSerial(data, new WriteSerialRunnable.Callback() {
-                    @Override
-                    public void onSerialWriteSuccess() {
-                        updateReceivedData("Serial write successful");
-                    }
-
-                    @Override
-                    public void onSerialWriteFailure() {
-                        updateReceivedData("Serial write unsuccessful");
-                    }
-                });
+                loraTransceiver.enqueueCommand(data);
             }
         });
     }

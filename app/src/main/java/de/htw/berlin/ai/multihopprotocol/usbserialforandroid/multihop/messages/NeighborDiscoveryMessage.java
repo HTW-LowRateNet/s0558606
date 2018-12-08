@@ -7,18 +7,13 @@ public class NeighborDiscoveryMessage extends MultihopMessage {
 
     public static final String CODE = "DISC";
 
-    public NeighborDiscoveryMessage(String payload, int TTL, int hoppedNodes) {
-        super(payload, TTL, hoppedNodes);
+    public NeighborDiscoveryMessage(String payload, int TTL, int hoppedNodes, Address originalSourceAddress, Address targetAddress) {
+        super(payload, TTL, hoppedNodes, originalSourceAddress, targetAddress);
         code = CODE;
     }
 
     public NeighborDiscoveryMessage(String message) {
         super(message);
-    }
-
-    @Override
-    public String createStringMessage() {
-        return code + "," + messageID + "," + TTL + "," + hoppedNodes;
     }
 
     public Address getNeighborAddress() {

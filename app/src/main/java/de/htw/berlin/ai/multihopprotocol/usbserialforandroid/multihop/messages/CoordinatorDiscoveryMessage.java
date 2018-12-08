@@ -1,11 +1,13 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages;
 
+import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address.Address;
+
 public class CoordinatorDiscoveryMessage extends MultihopMessage {
 
-    public static final String CODE = "KDIS";
+    public static final String CODE = "CDIS";
 
-    public CoordinatorDiscoveryMessage(String payload, int TTL, int hoppedNodes) {
-        super(payload, TTL, hoppedNodes);
+    public CoordinatorDiscoveryMessage(String payload, int TTL, int hoppedNodes, Address originalSourceAddress, Address targetAddress) {
+        super(payload, TTL, hoppedNodes, originalSourceAddress, targetAddress);
         code = CODE;
     }
 
@@ -13,8 +15,4 @@ public class CoordinatorDiscoveryMessage extends MultihopMessage {
         super(message);
     }
 
-    @Override
-    public String createStringMessage() {
-        return code + "," + messageID + "," + TTL + "," + hoppedNodes;
-    }
 }

@@ -56,7 +56,7 @@ public class MultihopProtocol {
     }
 
     private void initNetwork() {
-        startDiscovery();
+        startCoordinatorDiscovery();
 
         try {
             Thread.sleep(5000);
@@ -83,7 +83,25 @@ public class MultihopProtocol {
         protocolState.postValue(ProtocolState.SELF_COORDINATOR);
     }
 
-    public void startDiscovery() {
+    private void startCoordinatorDiscovery() {
+        protocolState.postValue(ProtocolState.COORDINATOR_DISCOVERY);
+
+        currentNetworkMessageListener = stringMessage -> {
+            MultihopMessage message = new MultihopMessage(stringMessage);
+            if (message.getCode().equals(CoordinatorAliveMessage.CODE)) {
+                addressProvider.addFixedAddress(new Address(message.getOriginalSourceAddress()));
+            }
+        };
+
+        transceiverDevice.addListener(currentNetworkMessageListener);
+
+        CoordinatorDiscoveryMessage coordinatorDiscoveryMessage = new CoordinatorDiscoveryMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+
+        transceiverDevice.send(coordinatorDiscoveryMessage.createStringMessage());
+        Timber.d("CoordinatorDiscoveryMessage: %s", coordinatorDiscoveryMessage.createStringMessage());
+    }
+
+    public void startNeighborDiscovery() {
         protocolState.postValue(ProtocolState.COORDINATOR_DISCOVERY);
 
         currentNetworkMessageListener = stringMessage -> {
@@ -97,33 +115,15 @@ public class MultihopProtocol {
 
         transceiverDevice.addListener(currentNetworkMessageListener);
 
-        NeighborDiscoveryMessage coordinatorDiscoveryMessage = new NeighborDiscoveryMessage("", 10, 0);
+        NeighborDiscoveryMessage coordinatorDiscoveryMessage = new NeighborDiscoveryMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
 
         transceiverDevice.send(coordinatorDiscoveryMessage.createStringMessage());
         Timber.d("CoordinatorDiscoveryMessage: %s", coordinatorDiscoveryMessage.createStringMessage());
     }
 
     private void sendCoordinatorKeepAlive() {
-        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", 10, 0);
+        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
         transceiverDevice.send(coordinatorAliveMessage.createStringMessage());
-    }
-
-    class CoordinatorHandler implements Runnable {
-        @Override
-        public void run() {
-            while (running) {
-                if (coordinator) {
-                    sendCoordinatorKeepAlive();
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    // TODO
-                }
-            }
-        }
     }
 
     private void startMessageHandling() {
@@ -189,5 +189,23 @@ public class MultihopProtocol {
 
     public LiveData<ProtocolState> getProtocolState() {
         return protocolState;
+    }
+
+    class CoordinatorHandler implements Runnable {
+        @Override
+        public void run() {
+            while (running) {
+                if (coordinator) {
+                    sendCoordinatorKeepAlive();
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    // TODO
+                }
+            }
+        }
     }
 }

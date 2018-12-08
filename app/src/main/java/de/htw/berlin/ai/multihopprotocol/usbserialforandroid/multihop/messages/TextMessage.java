@@ -6,17 +6,12 @@ public class TextMessage extends MultihopMessage {
 
     public static final String CODE = "MSSG";
 
-    public TextMessage(String message, Address targetAddress, int TTL, int hoppedNodes) {
-        super(Integer.toString(targetAddress.getAddress()) + "+" + message, TTL, hoppedNodes);
+    public TextMessage(String payload, int TTL, int hoppedNodes, Address originalSourceAddress, Address targetAddress) {
+        super(payload, TTL, hoppedNodes, originalSourceAddress, targetAddress);
         code = CODE;
     }
 
     public TextMessage(String message) throws NumberFormatException {
         super(message);
-    }
-
-    @Override
-    public String createStringMessage() {
-        return code + "," + messageID + "," + TTL + "," + hoppedNodes + "," + payload;
     }
 }

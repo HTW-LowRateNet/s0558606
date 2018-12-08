@@ -124,6 +124,7 @@ public class MultiHopActivity extends AppCompatActivity {
     private void updateReceivedData(String data) {
         runOnUiThread(() -> {
             tvConsoleText.append(data);
+            tvConsoleText.append("\r\n");
             scrollView.smoothScrollTo(0, tvConsoleText.getBottom());
 
         });

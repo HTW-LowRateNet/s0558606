@@ -1,5 +1,6 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
 
 import timber.log.Timber;
@@ -8,20 +9,14 @@ import timber.log.Timber;
  * Ensures that AT commands are received properly by transceiver.
  * If module responds with error, runnable will try until response is OK.
  */
-public class WriteSerialRunnable implements Runnable {
+public class SerialWriterRunnable implements Runnable {
 
-    public interface Callback {
-        void onSerialWriteSuccess();
-
-        void onSerialWriteFailure();
-    }
+    private final BlockingQueue<String> queue;
 
     private static final int MAX_RETRY_COUNT = 10;
     private int retryCount = 0;
 
-    private final String command;
     private final LoraTransceiver loraTransceiver;
-    private final Callback callback;
 
     private String lastSerialMessage;
 
@@ -34,41 +29,41 @@ public class WriteSerialRunnable implements Runnable {
         }
     };
 
-    public WriteSerialRunnable(LoraTransceiver loraTransceiver, String command, Callback callback) {
+    public SerialWriterRunnable(LoraTransceiver loraTransceiver, BlockingQueue<String> queue) {
         this.loraTransceiver = loraTransceiver;
-        this.command = command;
-        this.callback = callback;
+        this.queue = queue;
     }
 
     @Override
     public void run() {
         loraTransceiver.addListener(listener);
 
-        do {
-            sendSerial(command);
+        try {
+            while (true) {
+                String command = queue.take();
 
-            try {
-                // wait for serial message
-                semaphore.acquire();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                Timber.e(e, "Error in WriteSerialRunnable");
+                do {
+                    sendSerial(command);
+
+                    // wait for a new message from transceiver
+                    semaphore.acquire();
+
+                    if (lastSerialMessage.contains("ERR")) {
+                        resetCommand();
+                    }
+                    retryCount++;
+                } while (!isResponseOK(lastSerialMessage) && retryCount <= MAX_RETRY_COUNT);
             }
-
-            if (lastSerialMessage.contains("ERR")) {
-                resetCommand();
-            }
-
-            retryCount++;
-        } while (!lastSerialMessage.contains("AT,OK") && retryCount <= MAX_RETRY_COUNT);
+        } catch (InterruptedException e) {
+            Timber.e(e, "InterruptedException caught in SerialWriterRunnable");
+            e.printStackTrace();
+        }
 
         loraTransceiver.removeListener(listener);
+    }
 
-        if (retryCount <= MAX_RETRY_COUNT) {
-            callback.onSerialWriteSuccess();
-        } else {
-            callback.onSerialWriteFailure();
-        }
+    private boolean isResponseOK(String response) {
+        return response.contains("AT,OK") || response.contains("AT,SENDED");
     }
 
     private void sendSerial(String command) {
