@@ -149,7 +149,7 @@ public class LoraTransceiver implements TransceiverDevice {
             try {
                 serialPort.close();
             } catch (IOException e) {
-                Timber.e(e, "Error closing port");
+                //Timber.e(e, "Error closing port");
             }
         }
     }

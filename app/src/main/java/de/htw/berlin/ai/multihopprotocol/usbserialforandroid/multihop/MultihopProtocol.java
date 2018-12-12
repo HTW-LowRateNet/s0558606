@@ -43,11 +43,23 @@ public class MultihopProtocol {
 
     public void start() {
         running = true;
-        initNetwork();
         transceiverDevice.setDestinationAddress(addressProvider.getBroadcastAddress().getAddress());
 
+        chooseTempAddressForSelf();
+
+        initNetwork();
+
         startMessageHandling();
-        startCoordinatorThread();
+
+        if (coordinator) {
+            startCoordinatorThread();
+        } else {
+        }
+    }
+
+    public void sendTextMessage(String data) {
+        TextMessage textMessage = new TextMessage(data, 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+        transceiverDevice.send(textMessage.createStringMessage());
     }
 
     private void startCoordinatorThread() {
@@ -59,13 +71,55 @@ public class MultihopProtocol {
         startCoordinatorDiscovery();
 
         try {
-            Thread.sleep(5000);
+            Thread.sleep(10000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
         transceiverDevice.removeListener(currentNetworkMessageListener);
         decideBecomingCoordinator();
+
+        if (coordinator) {
+            addressProvider.setSelfAddress(addressProvider.getCoordinatorAddress());
+            transceiverDevice.setSelfAddress(addressProvider.getCoordinatorAddress().getAddress());
+        } else {
+            chooseTempAddressForSelf();
+            requestFixedAddressFromCoordinator();
+        }
+    }
+
+    private void chooseTempAddressForSelf() {
+        Address newTemporaryAddress = addressProvider.getNewTemporaryAddress();
+        addressProvider.setSelfAddress(newTemporaryAddress);
+        transceiverDevice.setSelfAddress(newTemporaryAddress.getAddress());
+        Timber.d("Set temporary self address to %s", newTemporaryAddress);
+    }
+
+    private void requestFixedAddressFromCoordinator() {
+        FixedAddressMessage fixedAddressMessage = new FixedAddressMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getCoordinatorAddress());
+        transceiverDevice.send(fixedAddressMessage.createStringMessage());
+    }
+
+    private void startCoordinatorDiscovery() {
+        protocolState.postValue(ProtocolState.COORDINATOR_DISCOVERY);
+
+        currentNetworkMessageListener = stringMessage -> {
+            try {
+                MultihopMessage message = new MultihopMessage(stringMessage);
+                if (message.getCode().equals(CoordinatorAliveMessage.CODE)) {
+                    addressProvider.addFixedAddress(message.getOriginalSourceAddress());
+                }
+            } catch (NumberFormatException e) {
+
+            }
+        };
+
+        transceiverDevice.addListener(currentNetworkMessageListener);
+
+        CoordinatorDiscoveryMessage coordinatorDiscoveryMessage = new CoordinatorDiscoveryMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+
+        transceiverDevice.send(coordinatorDiscoveryMessage.createStringMessage());
+        Timber.d("CoordinatorDiscoveryMessage: %s", coordinatorDiscoveryMessage.createStringMessage());
     }
 
     private void decideBecomingCoordinator() {
@@ -81,24 +135,6 @@ public class MultihopProtocol {
         transceiverDevice.setSelfAddress(0x0000);
         coordinator = true;
         protocolState.postValue(ProtocolState.SELF_COORDINATOR);
-    }
-
-    private void startCoordinatorDiscovery() {
-        protocolState.postValue(ProtocolState.COORDINATOR_DISCOVERY);
-
-        currentNetworkMessageListener = stringMessage -> {
-            MultihopMessage message = new MultihopMessage(stringMessage);
-            if (message.getCode().equals(CoordinatorAliveMessage.CODE)) {
-                addressProvider.addFixedAddress(new Address(message.getOriginalSourceAddress()));
-            }
-        };
-
-        transceiverDevice.addListener(currentNetworkMessageListener);
-
-        CoordinatorDiscoveryMessage coordinatorDiscoveryMessage = new CoordinatorDiscoveryMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
-
-        transceiverDevice.send(coordinatorDiscoveryMessage.createStringMessage());
-        Timber.d("CoordinatorDiscoveryMessage: %s", coordinatorDiscoveryMessage.createStringMessage());
     }
 
     public void startNeighborDiscovery() {
@@ -121,40 +157,39 @@ public class MultihopProtocol {
         Timber.d("CoordinatorDiscoveryMessage: %s", coordinatorDiscoveryMessage.createStringMessage());
     }
 
-    private void sendCoordinatorKeepAlive() {
-        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
-        transceiverDevice.send(coordinatorAliveMessage.createStringMessage());
-    }
-
     private void startMessageHandling() {
         currentNetworkMessageListener = stringMessage -> {
-            MultihopMessage multihopMessage = new MultihopMessage(stringMessage);
+            try {
+                MultihopMessage multihopMessage = new MultihopMessage(stringMessage);
+                Timber.d("New message received: %s", stringMessage);
 
-            Timber.d("New message received: %s", stringMessage);
+                switch (multihopMessage.getCode()) {
+                    case CoordinatorAliveMessage.CODE:
+                        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage(stringMessage);
+                        handleCoordinatorAliveMessage(coordinatorAliveMessage);
+                        break;
+                    case CoordinatorDiscoveryMessage.CODE:
+                        CoordinatorDiscoveryMessage coordinatorDiscoveryMessage = new CoordinatorDiscoveryMessage(stringMessage);
+                        handleCoordinatorDiscoveryMessage(coordinatorDiscoveryMessage);
+                        break;
+                    case FixedAddressMessage.CODE:
+                        FixedAddressMessage fixedAddressMessage = new FixedAddressMessage(stringMessage);
+                        handleFixedAddressMessage(fixedAddressMessage);
+                        break;
+                    case TextMessage.CODE:
+                        TextMessage textMessage = new TextMessage(stringMessage);
+                        handleTextMessage(textMessage);
+                        break;
+                    case NeighborDiscoveryMessage.CODE:
+                        NeighborDiscoveryMessage neighborDiscoveryMessage = new NeighborDiscoveryMessage(stringMessage);
+                        handleNeighborDiscoveryMessage(neighborDiscoveryMessage);
+                        break;
+                    default:
+                        break;
+                }
 
-            switch (multihopMessage.getCode()) {
-                case CoordinatorAliveMessage.CODE:
-                    CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage(stringMessage);
-                    handleCoordinatorAliveMessage(coordinatorAliveMessage);
-                    break;
-                case CoordinatorDiscoveryMessage.CODE:
-                    CoordinatorDiscoveryMessage coordinatorDiscoveryMessage = new CoordinatorDiscoveryMessage(stringMessage);
-                    handleCoordinatorDiscoveryMessage(coordinatorDiscoveryMessage);
-                    break;
-                case FixedAddressMessage.CODE:
-                    FixedAddressMessage fixedAddressMessage = new FixedAddressMessage(stringMessage);
-                    handleFixedAddressMessage(fixedAddressMessage);
-                    break;
-                case TextMessage.CODE:
-                    TextMessage textMessage = new TextMessage(stringMessage);
-                    handleTextMessage(textMessage);
-                    break;
-                case NeighborDiscoveryMessage.CODE:
-                    NeighborDiscoveryMessage neighborDiscoveryMessage = new NeighborDiscoveryMessage(stringMessage);
-                    handleNeighborDiscoveryMessage(neighborDiscoveryMessage);
-                    break;
-                default:
-                    break;
+            } catch (NumberFormatException e) {
+
             }
         };
 
@@ -166,11 +201,27 @@ public class MultihopProtocol {
     }
 
     private void handleCoordinatorDiscoveryMessage(CoordinatorDiscoveryMessage message) {
+        sendCoordinatorKeepAlive();
+    }
 
+    private void sendCoordinatorKeepAlive() {
+        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+        transceiverDevice.send(coordinatorAliveMessage.createStringMessage());
     }
 
     private void handleFixedAddressMessage(FixedAddressMessage message) {
-
+        if (message.getTargetAddress().equals(addressProvider.getSelfAddress())) {
+            String payload = message.getPayload();
+            try {
+                Integer newFixedSelfAddress = Integer.parseInt(payload);
+                addressProvider.setSelfAddress(new Address(newFixedSelfAddress));
+                transceiverDevice.setSelfAddress(newFixedSelfAddress);
+            } catch (NumberFormatException e) {
+                Timber.e(e, "Error parsing payload from FixedAddressMessage");
+            }
+        } else {
+            handMessageOverToNeighbors(message);
+        }
     }
 
     private void handleTextMessage(TextMessage message) {
@@ -179,6 +230,10 @@ public class MultihopProtocol {
 
     private void handleNeighborDiscoveryMessage(NeighborDiscoveryMessage message) {
 
+    }
+
+    private void handMessageOverToNeighbors(MultihopMessage message) {
+        // TODO increase hoppednodes counter
     }
 
     public void stop() {
@@ -195,15 +250,12 @@ public class MultihopProtocol {
         @Override
         public void run() {
             while (running) {
-                if (coordinator) {
-                    sendCoordinatorKeepAlive();
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    // TODO
+                sendCoordinatorKeepAlive();
+
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }

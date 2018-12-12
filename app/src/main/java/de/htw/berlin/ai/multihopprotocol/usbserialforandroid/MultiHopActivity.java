@@ -82,7 +82,7 @@ public class MultiHopActivity extends AppCompatActivity {
             if (!etMessage.getText().toString().equals("")) {
                 String data = etMessage.getText().toString().trim();
 
-                transceiverDevice.send(data);
+                multihopProtocol.sendTextMessage(data);
             }
         });
     }

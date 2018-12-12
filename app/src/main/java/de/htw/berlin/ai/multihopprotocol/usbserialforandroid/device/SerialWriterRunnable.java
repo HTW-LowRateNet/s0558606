@@ -20,6 +20,8 @@ public class SerialWriterRunnable implements Runnable {
 
     private String lastSerialMessage;
 
+    private boolean running;
+
     private Semaphore semaphore = new Semaphore(0);
     SerialMessageListener listener = new SerialMessageListener() {
         @Override
@@ -32,35 +34,44 @@ public class SerialWriterRunnable implements Runnable {
     public SerialWriterRunnable(LoraTransceiver loraTransceiver, BlockingQueue<String> queue) {
         this.loraTransceiver = loraTransceiver;
         this.queue = queue;
+
+        running = true;
     }
 
     @Override
     public void run() {
         loraTransceiver.addListener(listener);
 
-        try {
-            while (true) {
-                String command = queue.take();
+        while (running) {
+            try {
+                while (true) {
+                    String command = queue.take();
 
-                do {
-                    sendSerial(command);
+                    do {
+                        sendSerial(command);
 
-                    // wait for a new message from transceiver
-                    semaphore.acquire();
+                        // wait for a new message from transceiver
+                        semaphore.acquire();
 
-                    if (lastSerialMessage.contains("ERR")) {
-                        resetCommand();
-                    }
-                    retryCount++;
-                } while (!isResponseOK(lastSerialMessage) && retryCount <= MAX_RETRY_COUNT);
+                        if (lastSerialMessage.contains("ERR")) {
+                            resetCommand();
+                        }
+                        retryCount++;
+                    } while (!isResponseOK(lastSerialMessage) && retryCount <= MAX_RETRY_COUNT);
+                }
+            } catch (InterruptedException e) {
+                Timber.e(e, "InterruptedException caught in SerialWriterRunnable");
+                e.printStackTrace();
             }
-        } catch (InterruptedException e) {
-            Timber.e(e, "InterruptedException caught in SerialWriterRunnable");
-            e.printStackTrace();
         }
 
         loraTransceiver.removeListener(listener);
     }
+
+    public void stop() {
+        running = false;
+    }
+
 
     private boolean isResponseOK(String response) {
         return response.contains("AT,OK") || response.contains("AT,SENDED");

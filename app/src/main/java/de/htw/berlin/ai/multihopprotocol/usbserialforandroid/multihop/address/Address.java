@@ -4,26 +4,14 @@ import java.util.Objects;
 
 public class Address {
 
-    private static int nodeIDCounter = 0;
-
-    private int nodeID;
     private int address;
 
     public Address(int address) {
         this.address = address;
-        nodeID = nodeIDCounter++;
-    }
-
-    public int getNodeID() {
-        return nodeID;
     }
 
     public int getAddress() {
         return address;
-    }
-
-    public void setNodeID(int nodeID) {
-        this.nodeID = nodeID;
     }
 
     public void setAddress(int address) {
@@ -47,8 +35,7 @@ public class Address {
     @Override
     public String toString() {
         return "Address{" +
-                "nodeID=" + nodeID +
-                ", address=" + address +
+                "address=" + address +
                 '}';
     }
 }

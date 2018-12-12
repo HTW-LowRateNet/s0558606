@@ -11,8 +11,8 @@ public class MultihopMessage {
     protected int messageID;
     protected int TTL;
     protected int hoppedNodes;
-    protected int originalSourceAddress;
-    protected int targetAddress;
+    protected Address originalSourceAddress;
+    protected Address targetAddress;
 
     public MultihopMessage() {
 
@@ -26,8 +26,8 @@ public class MultihopMessage {
         messageID = Integer.parseInt(strings[4].trim());
         TTL = Integer.parseInt(strings[5].trim());
         hoppedNodes = Integer.parseInt(strings[6].trim());
-        originalSourceAddress = Integer.parseInt(strings[7].trim());
-        targetAddress = Integer.parseInt(strings[8].trim());
+        originalSourceAddress = new Address(Integer.parseInt(strings[7].trim()));
+        targetAddress = new Address(Integer.parseInt(strings[8].trim()));
         if (strings.length == 10)
             payload = strings[9];
         else
@@ -38,8 +38,8 @@ public class MultihopMessage {
         this.payload = payload;
         this.TTL = TTL;
         this.hoppedNodes = hoppedNodes;
-        this.originalSourceAddress = originalSourceAddress.getAddress();
-        this.targetAddress = targetAddress.getAddress();
+        this.originalSourceAddress = originalSourceAddress;
+        this.targetAddress = targetAddress;
 
         messageID = generateMessageID();
     }
@@ -50,7 +50,7 @@ public class MultihopMessage {
     }
 
     public String createStringMessage() {
-        return code + "," + messageID + "," + TTL + "," + hoppedNodes + "," + originalSourceAddress + "," + targetAddress + "," + payload;
+        return code + "," + messageID + "," + TTL + "," + hoppedNodes + "," + originalSourceAddress.getAddress() + "," + targetAddress.getAddress() + "," + payload;
     }
 
     public String getCode() {
@@ -73,11 +73,11 @@ public class MultihopMessage {
         return hoppedNodes;
     }
 
-    public int getOriginalSourceAddress() {
+    public Address getOriginalSourceAddress() {
         return originalSourceAddress;
     }
 
-    public int getTargetAddress() {
+    public Address getTargetAddress() {
         return targetAddress;
     }
 }
