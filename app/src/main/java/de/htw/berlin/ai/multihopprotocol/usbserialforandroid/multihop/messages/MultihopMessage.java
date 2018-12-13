@@ -8,7 +8,7 @@ public class MultihopMessage {
 
     protected String code;
     protected String payload;
-    protected int messageID;
+    protected String messageID;
     protected int TTL;
     protected int hoppedNodes;
     protected Address originalSourceAddress;
@@ -23,7 +23,7 @@ public class MultihopMessage {
         String[] strings = message.split(",");
 
         code = strings[3].trim();
-        messageID = Integer.parseInt(strings[4].trim());
+        messageID = strings[4].trim();
         TTL = Integer.parseInt(strings[5].trim());
         hoppedNodes = Integer.parseInt(strings[6].trim());
         originalSourceAddress = new Address(Integer.parseInt(strings[7].trim()));
@@ -44,13 +44,13 @@ public class MultihopMessage {
         messageID = generateMessageID();
     }
 
-    private int generateMessageID() {
+    private String generateMessageID() {
         Random random = new Random();
-        return random.nextInt(Integer.MAX_VALUE);
+        return String.valueOf(random.nextInt(Integer.MAX_VALUE));
     }
 
     public String createStringMessage() {
-        return code + "," + messageID + "," + TTL + "," + hoppedNodes + "," + originalSourceAddress.getAddress() + "," + targetAddress.getAddress() + "," + payload;
+        return code + "," + messageID + "," + TTL + "," + hoppedNodes + "," + originalSourceAddress.getFourLetterHexAddress() + "," + targetAddress.getFourLetterHexAddress() + "," + payload;
     }
 
     public String getCode() {
@@ -61,7 +61,7 @@ public class MultihopMessage {
         return payload;
     }
 
-    public int getMessageID() {
+    public String getMessageID() {
         return messageID;
     }
 

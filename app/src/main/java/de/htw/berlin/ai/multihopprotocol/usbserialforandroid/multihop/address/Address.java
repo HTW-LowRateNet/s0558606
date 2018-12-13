@@ -14,6 +14,14 @@ public class Address {
         return address;
     }
 
+    public String getFourLetterHexAddress() {
+        StringBuilder hexAddress = new StringBuilder(Integer.toHexString(address));
+        while (hexAddress.length() < 4) {
+            hexAddress.insert(0, "0");
+        }
+        return hexAddress.toString().toUpperCase();
+    }
+
     public void setAddress(int address) {
         this.address = address;
     }

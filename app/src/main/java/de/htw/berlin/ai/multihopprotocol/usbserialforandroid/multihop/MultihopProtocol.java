@@ -7,11 +7,11 @@ import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.NetworkMessa
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.TransceiverDevice;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address.Address;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address.AddressProvider;
+import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.AcknowledgeFixedAddressMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.CoordinatorAliveMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.CoordinatorDiscoveryMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.FixedAddressMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.MultihopMessage;
-import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.NeighborDiscoveryMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.TextMessage;
 import timber.log.Timber;
 
@@ -132,36 +132,16 @@ public class MultihopProtocol {
     }
 
     private void becomeCoordinator() {
-        transceiverDevice.setSelfAddress(0x0000);
+        transceiverDevice.setSelfAddress(addressProvider.getCoordinatorAddress().getAddress());
         coordinator = true;
         protocolState.postValue(ProtocolState.SELF_COORDINATOR);
-    }
-
-    public void startNeighborDiscovery() {
-        protocolState.postValue(ProtocolState.COORDINATOR_DISCOVERY);
-
-        currentNetworkMessageListener = stringMessage -> {
-            MultihopMessage message = new MultihopMessage(stringMessage);
-            if (message.getCode().equals(NeighborDiscoveryMessage.CODE)) {
-                NeighborDiscoveryMessage neighborDiscoveryMessage = new NeighborDiscoveryMessage(stringMessage);
-                Address neighborAddress = neighborDiscoveryMessage.getNeighborAddress();
-                addressProvider.addFixedAddress(neighborAddress);
-            }
-        };
-
-        transceiverDevice.addListener(currentNetworkMessageListener);
-
-        NeighborDiscoveryMessage coordinatorDiscoveryMessage = new NeighborDiscoveryMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
-
-        transceiverDevice.send(coordinatorDiscoveryMessage.createStringMessage());
-        Timber.d("CoordinatorDiscoveryMessage: %s", coordinatorDiscoveryMessage.createStringMessage());
     }
 
     private void startMessageHandling() {
         currentNetworkMessageListener = stringMessage -> {
             try {
-                MultihopMessage multihopMessage = new MultihopMessage(stringMessage);
                 Timber.d("New message received: %s", stringMessage);
+                MultihopMessage multihopMessage = new MultihopMessage(stringMessage);
 
                 switch (multihopMessage.getCode()) {
                     case CoordinatorAliveMessage.CODE:
@@ -180,16 +160,12 @@ public class MultihopProtocol {
                         TextMessage textMessage = new TextMessage(stringMessage);
                         handleTextMessage(textMessage);
                         break;
-                    case NeighborDiscoveryMessage.CODE:
-                        NeighborDiscoveryMessage neighborDiscoveryMessage = new NeighborDiscoveryMessage(stringMessage);
-                        handleNeighborDiscoveryMessage(neighborDiscoveryMessage);
-                        break;
                     default:
                         break;
                 }
 
             } catch (NumberFormatException e) {
-
+                Timber.e(e, "Exception in message handling");
             }
         };
 
@@ -209,26 +185,34 @@ public class MultihopProtocol {
         transceiverDevice.send(coordinatorAliveMessage.createStringMessage());
     }
 
-    private void handleFixedAddressMessage(FixedAddressMessage message) {
-        if (message.getTargetAddress().equals(addressProvider.getSelfAddress())) {
-            String payload = message.getPayload();
-            try {
-                Integer newFixedSelfAddress = Integer.parseInt(payload);
-                addressProvider.setSelfAddress(new Address(newFixedSelfAddress));
-                transceiverDevice.setSelfAddress(newFixedSelfAddress);
-            } catch (NumberFormatException e) {
-                Timber.e(e, "Error parsing payload from FixedAddressMessage");
+    private void handleFixedAddressMessage(FixedAddressMessage receivedMessage) {
+        if (receivedMessage.getTargetAddress().equals(addressProvider.getSelfAddress())) {
+            if (coordinator) {
+                Address newFixedAddress = addressProvider.getNewFixedAddress();
+                addressProvider.addFixedAddress(newFixedAddress);
+                FixedAddressMessage fixedAddressMessage
+                        = new FixedAddressMessage(newFixedAddress.getFourLetterHexAddress(), 10, 0, addressProvider.getSelfAddress(), receivedMessage.getOriginalSourceAddress());
+                transceiverDevice.send(fixedAddressMessage.createStringMessage());
+            } else {
+                String payload = receivedMessage.getPayload();
+                try {
+                    Integer newFixedSelfAddress = Integer.parseInt(payload);
+                    addressProvider.setSelfAddress(new Address(newFixedSelfAddress));
+                    transceiverDevice.setSelfAddress(newFixedSelfAddress);
+
+                    AcknowledgeFixedAddressMessage acknowledgeFixedAddressMessage
+                            = new AcknowledgeFixedAddressMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getCoordinatorAddress());
+                    transceiverDevice.send(acknowledgeFixedAddressMessage.createStringMessage());
+                } catch (NumberFormatException e) {
+                    Timber.e(e, "Error parsing payload from FixedAddressMessage");
+                }
             }
         } else {
-            handMessageOverToNeighbors(message);
+            handMessageOverToNeighbors(receivedMessage);
         }
     }
 
     private void handleTextMessage(TextMessage message) {
-
-    }
-
-    private void handleNeighborDiscoveryMessage(NeighborDiscoveryMessage message) {
 
     }
 
