@@ -26,8 +26,8 @@ public class MultihopMessage {
         messageID = strings[4].trim();
         TTL = Integer.parseInt(strings[5].trim());
         hoppedNodes = Integer.parseInt(strings[6].trim());
-        originalSourceAddress = new Address(Integer.parseInt(strings[7].trim()));
-        targetAddress = new Address(Integer.parseInt(strings[8].trim()));
+        originalSourceAddress = new Address(Integer.parseInt(strings[7].trim(), 16));
+        targetAddress = new Address(Integer.parseInt(strings[8].trim(), 16));
         if (strings.length == 10)
             payload = strings[9];
         else
