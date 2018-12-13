@@ -54,7 +54,8 @@ public class LoraTransceiver implements TransceiverDevice {
     private Runnable writeSerialRunnable;
     private BlockingQueue serialCommandQueue;
 
-    private final Object sendingLock = new Object();
+    private final Object writeSerialLock = new Object();
+    private final Object sendLock = new Object();
 
     public LoraTransceiver(UsbSerialPort serialPort, UsbManager usbManager) {
         this.serialPort = serialPort;
@@ -179,8 +180,10 @@ public class LoraTransceiver implements TransceiverDevice {
     public void send(String data) {
         String startSendingCommand = "AT+SEND=" + data.getBytes().length;
 
-        enqueueCommand(startSendingCommand);
-        enqueueCommand(data);
+        synchronized (sendLock) {
+            enqueueCommand(startSendingCommand);
+            enqueueCommand(data);
+        }
     }
 
     public void enqueueCommand(String command) {
@@ -194,9 +197,11 @@ public class LoraTransceiver implements TransceiverDevice {
 
     public void writeSerial(String data) {
         try {
-            serialInputOutputManager.writeSync(data.getBytes());
-            Timber.d("Writing to serial: %s", data);
-            serialInputOutputManager.writeSync(LINE_FEED);
+            synchronized (writeSerialLock) {
+                serialInputOutputManager.writeSync(data.getBytes());
+                serialInputOutputManager.writeSync(LINE_FEED);
+                Timber.d("Writing to serial: %s", data);
+            }
         } catch (IOException e) {
             Timber.e(e);
         }
