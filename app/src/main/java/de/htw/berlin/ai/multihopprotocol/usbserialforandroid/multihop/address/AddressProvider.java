@@ -5,18 +5,15 @@ import java.util.Random;
 
 public class AddressProvider {
 
-    private static final int COORDINATOR_ADDRESS = 0x0000;
+    public static final int COORDINATOR_ADDRESS = 0x0000;
 
-    private static final int COORD_TEMP_ADDRESS_LOWER_BOUND = 0x0001;
-    private static final int COORD_TEMP_ADDRESS_UPPER_BOUND = 0x000F;
+    public static final int TEMP_ADDRESS_LOWER_BOUND = 0x0011;
+    public static final int TEMP_ADDRESS_UPPER_BOUND = 0x00FF;
 
-    private static final int TEMP_ADDRESS_LOWER_BOUND = 0x0011;
-    private static final int TEMP_ADDRESS_UPPER_BOUND = 0x00FF;
+    public static final int FIXED_ADDRESS_LOWER_BOUND = 0x0100;
+    public static final int FIXED_ADDRESS_UPPER_BOUND = 0xFFFE;
 
-    private static final int FIXED_ADDRESS_LOWER_BOUND = 0x0100;
-    private static final int FIXED_ADDRESS_UPPER_BOUND = 0xFFFE;
-
-    private static final int BROADCAST_ADDRESS = 0xFFFF;
+    public static final int BROADCAST_ADDRESS = 0xFFFF;
 
     private AddressBook temporaryAddresses;
     private AddressBook fixedAddresses;

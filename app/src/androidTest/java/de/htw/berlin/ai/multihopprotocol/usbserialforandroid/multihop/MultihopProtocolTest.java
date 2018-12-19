@@ -12,8 +12,11 @@ import java.util.concurrent.Semaphore;
 
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.LoraTransceiver;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.TransceiverDevice;
+import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address.AddressProvider;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MultihopProtocolTest {
 
@@ -53,7 +56,6 @@ public class MultihopProtocolTest {
         });
 
         thread.start();
-
         semaphore.acquire();
 
         assertEquals(MultihopProtocol.ProtocolState.COORDINATOR_DISCOVERY, protocolState);
@@ -61,6 +63,8 @@ public class MultihopProtocolTest {
         semaphore.acquire();
 
         assertEquals(MultihopProtocol.ProtocolState.SELF_COORDINATOR, protocolState);
+
+        assertEquals(AddressProvider.COORDINATOR_ADDRESS, multihopProtocol.addressProvider.getSelfAddress().getAddress());
     }
 
     @Test
@@ -87,18 +91,15 @@ public class MultihopProtocolTest {
 
         assertEquals(MultihopProtocol.ProtocolState.COORDINATOR_DISCOVERY, protocolState);
 
-        multihopProtocol.currentNetworkMessageListener.onMessageReceived("LR,0000,10,DISC,21,5,1");
+        multihopProtocol.currentNetworkMessageListener.onMessageReceived("LR,0000,10,ALIV,21,5,1,0000,FFFF,");
 
         semaphore.acquire();
 
+        assertNotEquals(0, multihopProtocol.addressProvider.getFixedAddresses().size());
         assertEquals(MultihopProtocol.ProtocolState.COORDINATOR_KNOWN, protocolState);
+
+        assertTrue(multihopProtocol.addressProvider.getSelfAddress().getAddress() <= AddressProvider.TEMP_ADDRESS_UPPER_BOUND
+                && multihopProtocol.addressProvider.getSelfAddress().getAddress() >= AddressProvider.TEMP_ADDRESS_LOWER_BOUND);
     }
 
-    @Test
-    public void startDiscovery() {
-    }
-
-    @Test
-    public void stop() {
-    }
 }

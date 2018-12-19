@@ -51,9 +51,16 @@ public class MultihopProtocol {
 
         startMessageHandling();
 
+
         if (coordinator) {
+            addressProvider.setSelfAddress(addressProvider.getCoordinatorAddress());
+            transceiverDevice.setSelfAddress(addressProvider.getCoordinatorAddress().getAddress());
+
             startCoordinatorThread();
+
         } else {
+            chooseTempAddressForSelf();
+            requestFixedAddressFromCoordinator();
         }
     }
 
@@ -71,21 +78,13 @@ public class MultihopProtocol {
         startCoordinatorDiscovery();
 
         try {
-            Thread.sleep(10000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
         transceiverDevice.removeListener(currentNetworkMessageListener);
         decideBecomingCoordinator();
-
-        if (coordinator) {
-            addressProvider.setSelfAddress(addressProvider.getCoordinatorAddress());
-            transceiverDevice.setSelfAddress(addressProvider.getCoordinatorAddress().getAddress());
-        } else {
-            chooseTempAddressForSelf();
-            requestFixedAddressFromCoordinator();
-        }
     }
 
     private void chooseTempAddressForSelf() {

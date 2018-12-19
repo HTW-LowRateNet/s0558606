@@ -35,10 +35,6 @@
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>
-
-            <meta-data
-                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
-                android:resource="@xml/device_filter" />
         </activity>
 
         <service
@@ -53,6 +49,9 @@
             android:name=".usbserialforandroid.MultiHopActivity"
             android:label="@string/title_activity_multi_hop"
             android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/device_filter" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
