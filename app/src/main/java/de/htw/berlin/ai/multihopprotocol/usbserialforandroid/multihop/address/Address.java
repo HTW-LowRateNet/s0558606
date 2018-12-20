@@ -2,12 +2,29 @@ package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address;
 
 import java.util.Objects;
 
+import timber.log.Timber;
+
 public class Address {
 
-    private int address;
+    private int address = -1;
 
     public Address(int address) {
         this.address = address;
+    }
+
+    public Address(String integerHexString) {
+        try {
+            address = Integer.parseInt(integerHexString.trim(), 16);
+        } catch (NumberFormatException e) {
+            Timber.e(e);
+
+            try {
+                address = Integer.parseInt(integerHexString.trim());
+            } catch (NumberFormatException e2) {
+                Timber.e(e);
+            }
+        }
+
     }
 
     public int getAddress() {

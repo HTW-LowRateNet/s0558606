@@ -12,6 +12,7 @@ import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.C
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.CoordinatorDiscoveryMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.FixedAddressMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.MultihopMessage;
+import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.NetworkResetMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.TextMessage;
 import timber.log.Timber;
 
@@ -78,7 +79,7 @@ public class MultihopProtocol {
         startCoordinatorDiscovery();
 
         try {
-            Thread.sleep(5000);
+            Thread.sleep(15000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -147,6 +148,10 @@ public class MultihopProtocol {
                         CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage(stringMessage);
                         handleCoordinatorAliveMessage(coordinatorAliveMessage);
                         break;
+                    case NetworkResetMessage.CODE:
+                        NetworkResetMessage networkResetMessage = new NetworkResetMessage(stringMessage);
+                        handleNetworkResetMessage(networkResetMessage);
+                        break;
                     case CoordinatorDiscoveryMessage.CODE:
                         CoordinatorDiscoveryMessage coordinatorDiscoveryMessage = new CoordinatorDiscoveryMessage(stringMessage);
                         handleCoordinatorDiscoveryMessage(coordinatorDiscoveryMessage);
@@ -171,12 +176,35 @@ public class MultihopProtocol {
         transceiverDevice.addListener(currentNetworkMessageListener);
     }
 
+    private void handleNetworkResetMessage(NetworkResetMessage networkResetMessage) {
+        handMessageOverToNeighbors(networkResetMessage);
+        resetNetwork();
+    }
+
     private void handleCoordinatorAliveMessage(CoordinatorAliveMessage message) {
+        if (coordinator) {
+            sendNetworkResetMessage();
+        } else {
+            handMessageOverToNeighbors(message);
+        }
+    }
+
+    private void sendNetworkResetMessage() {
+        NetworkResetMessage networkResetMessage =
+                new NetworkResetMessage("WE ARE DYING!", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+        transceiverDevice.send(networkResetMessage.createStringMessage());
+    }
+
+    private void resetNetwork() {
 
     }
 
     private void handleCoordinatorDiscoveryMessage(CoordinatorDiscoveryMessage message) {
-        sendCoordinatorKeepAlive();
+        if (coordinator) {
+            sendCoordinatorKeepAlive();
+        } else {
+            handMessageOverToNeighbors(message);
+        }
     }
 
     private void sendCoordinatorKeepAlive() {
@@ -195,9 +223,9 @@ public class MultihopProtocol {
             } else {
                 String payload = receivedMessage.getPayload();
                 try {
-                    Integer newFixedSelfAddress = Integer.parseInt(payload);
-                    addressProvider.setSelfAddress(new Address(newFixedSelfAddress));
-                    transceiverDevice.setSelfAddress(newFixedSelfAddress);
+                    Address newFixedSelfAddress = getAddressFromPayload(payload);
+                    addressProvider.setSelfAddress(newFixedSelfAddress);
+                    transceiverDevice.setSelfAddress(newFixedSelfAddress.getAddress());
 
                     AcknowledgeFixedAddressMessage acknowledgeFixedAddressMessage
                             = new AcknowledgeFixedAddressMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getCoordinatorAddress());
@@ -211,12 +239,20 @@ public class MultihopProtocol {
         }
     }
 
+    private Address getAddressFromPayload(String payload) {
+        return new Address(payload);
+    }
+
     private void handleTextMessage(TextMessage message) {
 
     }
 
     private void handMessageOverToNeighbors(MultihopMessage message) {
-        // TODO increase hoppednodes counter
+        if (message.getTTL() <= message.getHoppedNodes() + 1) {
+            MultihopMessage handOverMessage =
+                    new MultihopMessage(message.getPayload(), message.getTTL(), message.getHoppedNodes() + 1, message.getOriginalSourceAddress(), message.getTargetAddress());
+            transceiverDevice.send(handOverMessage.createStringMessage());
+        }
     }
 
     public void stop() {
