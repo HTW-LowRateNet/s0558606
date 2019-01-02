@@ -18,6 +18,8 @@ import timber.log.Timber;
 
 public class MultihopProtocol {
 
+    private static final int MAX_RETRY_COUNT = 3;
+
     public enum ProtocolState {
         COORDINATOR_DISCOVERY, SELF_COORDINATOR, COORDINATOR_KNOWN;
     }
@@ -76,16 +78,20 @@ public class MultihopProtocol {
     }
 
     private void initNetwork() {
-        startCoordinatorDiscovery();
+        int retryCount = 0;
+        while (!coordinator && retryCount <= MAX_RETRY_COUNT) {
+            startCoordinatorDiscovery();
 
-        try {
-            Thread.sleep(15000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            transceiverDevice.removeListener(currentNetworkMessageListener);
+            decideBecomingCoordinator();
+            retryCount++;
         }
 
-        transceiverDevice.removeListener(currentNetworkMessageListener);
-        decideBecomingCoordinator();
     }
 
     private void chooseTempAddressForSelf() {
@@ -126,15 +132,19 @@ public class MultihopProtocol {
         if (addressProvider.getFixedAddresses().size() == 0) {
             becomeCoordinator();
         } else {
-            coordinator = false;
-            protocolState.postValue(ProtocolState.COORDINATOR_KNOWN);
+            becomeSimpleNode();
         }
     }
 
     private void becomeCoordinator() {
-        transceiverDevice.setSelfAddress(addressProvider.getCoordinatorAddress().getAddress());
         coordinator = true;
+        transceiverDevice.setSelfAddress(addressProvider.getCoordinatorAddress().getAddress());
         protocolState.postValue(ProtocolState.SELF_COORDINATOR);
+    }
+
+    private void becomeSimpleNode() {
+        coordinator = false;
+        protocolState.postValue(ProtocolState.COORDINATOR_KNOWN);
     }
 
     private void startMessageHandling() {
