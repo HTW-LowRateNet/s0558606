@@ -199,6 +199,7 @@ public class MultihopProtocol {
     private void handleCoordinatorAliveMessage(CoordinatorAliveMessage message) {
         if (coordinator) {
             sendNetworkResetMessage();
+            resetNetwork();
         } else {
             handMessageOverToNeighbors(message);
         }
@@ -211,7 +212,11 @@ public class MultihopProtocol {
     }
 
     private void resetNetwork() {
-
+        stop();
+        messageBook = new MessageBook();
+        addressProvider = new AddressProvider();
+        coordinator = false;
+        initNetwork();
     }
 
     private void handleCoordinatorDiscoveryMessage(CoordinatorDiscoveryMessage message) {
