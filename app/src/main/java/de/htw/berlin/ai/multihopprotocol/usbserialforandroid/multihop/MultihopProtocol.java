@@ -11,6 +11,7 @@ import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.A
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.CoordinatorAliveMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.CoordinatorDiscoveryMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.FixedAddressMessage;
+import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.MessageBook;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.MultihopMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.NetworkResetMessage;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.messages.TextMessage;
@@ -30,6 +31,8 @@ public class MultihopProtocol {
     private MutableLiveData<ProtocolState> protocolState;
 
     AddressProvider addressProvider = new AddressProvider();
+
+    MessageBook messageBook = new MessageBook();
 
     TransceiverDevice transceiverDevice;
 
@@ -53,7 +56,6 @@ public class MultihopProtocol {
         initNetwork();
 
         startMessageHandling();
-
 
         if (coordinator) {
             addressProvider.setSelfAddress(addressProvider.getCoordinatorAddress());
@@ -153,29 +155,32 @@ public class MultihopProtocol {
                 Timber.d("New message received: %s", stringMessage);
                 MultihopMessage multihopMessage = new MultihopMessage(stringMessage);
 
-                switch (multihopMessage.getCode()) {
-                    case CoordinatorAliveMessage.CODE:
-                        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage(stringMessage);
-                        handleCoordinatorAliveMessage(coordinatorAliveMessage);
-                        break;
-                    case NetworkResetMessage.CODE:
-                        NetworkResetMessage networkResetMessage = new NetworkResetMessage(stringMessage);
-                        handleNetworkResetMessage(networkResetMessage);
-                        break;
-                    case CoordinatorDiscoveryMessage.CODE:
-                        CoordinatorDiscoveryMessage coordinatorDiscoveryMessage = new CoordinatorDiscoveryMessage(stringMessage);
-                        handleCoordinatorDiscoveryMessage(coordinatorDiscoveryMessage);
-                        break;
-                    case FixedAddressMessage.CODE:
-                        FixedAddressMessage fixedAddressMessage = new FixedAddressMessage(stringMessage);
-                        handleFixedAddressMessage(fixedAddressMessage);
-                        break;
-                    case TextMessage.CODE:
-                        TextMessage textMessage = new TextMessage(stringMessage);
-                        handleTextMessage(textMessage);
-                        break;
-                    default:
-                        break;
+                boolean hasMessageAlready = messageBook.addMessage(multihopMessage);
+                if (!hasMessageAlready) {
+                    switch (multihopMessage.getCode()) {
+                        case CoordinatorAliveMessage.CODE:
+                            CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage(stringMessage);
+                            handleCoordinatorAliveMessage(coordinatorAliveMessage);
+                            break;
+                        case NetworkResetMessage.CODE:
+                            NetworkResetMessage networkResetMessage = new NetworkResetMessage(stringMessage);
+                            handleNetworkResetMessage(networkResetMessage);
+                            break;
+                        case CoordinatorDiscoveryMessage.CODE:
+                            CoordinatorDiscoveryMessage coordinatorDiscoveryMessage = new CoordinatorDiscoveryMessage(stringMessage);
+                            handleCoordinatorDiscoveryMessage(coordinatorDiscoveryMessage);
+                            break;
+                        case FixedAddressMessage.CODE:
+                            FixedAddressMessage fixedAddressMessage = new FixedAddressMessage(stringMessage);
+                            handleFixedAddressMessage(fixedAddressMessage);
+                            break;
+                        case TextMessage.CODE:
+                            TextMessage textMessage = new TextMessage(stringMessage);
+                            handleTextMessage(textMessage);
+                            break;
+                        default:
+                            break;
+                    }
                 }
 
             } catch (NumberFormatException e) {
