@@ -50,7 +50,10 @@ public class MultihopMessage {
     }
 
     public String createStringMessage() {
-        return code + "," + messageID + "," + TTL + "," + hoppedNodes + "," + originalSourceAddress.getFourLetterHexAddress() + "," + targetAddress.getFourLetterHexAddress() + "," + payload;
+        return code + "," + messageID + "," + TTL + "," + hoppedNodes + "," +
+                (originalSourceAddress != null ? originalSourceAddress.getFourLetterHexAddress() : "")
+                + "," +
+                (targetAddress != null ? targetAddress.getFourLetterHexAddress() : "") + "," + payload;
     }
 
     public String getCode() {
