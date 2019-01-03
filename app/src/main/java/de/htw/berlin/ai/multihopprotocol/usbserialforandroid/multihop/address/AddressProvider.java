@@ -29,7 +29,7 @@ public class AddressProvider {
         Random random = new Random();
         Address newAddress;
         do {
-            newAddress = new Address(TEMP_ADDRESS_LOWER_BOUND + random.nextInt(TEMP_ADDRESS_UPPER_BOUND));
+            newAddress = new Address(TEMP_ADDRESS_LOWER_BOUND + random.nextInt(TEMP_ADDRESS_UPPER_BOUND - TEMP_ADDRESS_LOWER_BOUND));
         } while (temporaryAddresses.hasAddress(newAddress));
         temporaryAddresses.addAddress(newAddress);
         return newAddress;
