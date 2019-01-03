@@ -20,6 +20,7 @@ import timber.log.Timber;
 public class MultihopProtocol {
 
     private static final int MAX_RETRY_COUNT = 3;
+    private static final int DEFAULT_TTL = 10;
 
     public enum ProtocolState {
         COORDINATOR_DISCOVERY, SELF_COORDINATOR, COORDINATOR_KNOWN;
@@ -70,7 +71,7 @@ public class MultihopProtocol {
     }
 
     public void sendTextMessage(String data) {
-        TextMessage textMessage = new TextMessage(data, 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+        TextMessage textMessage = new TextMessage(data, DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
         transceiverDevice.send(textMessage.createStringMessage());
     }
 
@@ -104,7 +105,7 @@ public class MultihopProtocol {
     }
 
     private void requestFixedAddressFromCoordinator() {
-        FixedAddressMessage fixedAddressMessage = new FixedAddressMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getCoordinatorAddress());
+        FixedAddressMessage fixedAddressMessage = new FixedAddressMessage("", DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getCoordinatorAddress());
         transceiverDevice.send(fixedAddressMessage.createStringMessage());
     }
 
@@ -122,7 +123,7 @@ public class MultihopProtocol {
 
         transceiverDevice.addListener(currentNetworkMessageListener);
 
-        CoordinatorDiscoveryMessage coordinatorDiscoveryMessage = new CoordinatorDiscoveryMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+        CoordinatorDiscoveryMessage coordinatorDiscoveryMessage = new CoordinatorDiscoveryMessage("", DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
 
         transceiverDevice.send(coordinatorDiscoveryMessage.createStringMessage());
         Timber.d("CoordinatorDiscoveryMessage: %s", coordinatorDiscoveryMessage.createStringMessage());
@@ -205,7 +206,7 @@ public class MultihopProtocol {
 
     private void sendNetworkResetMessage() {
         NetworkResetMessage networkResetMessage =
-                new NetworkResetMessage("WE ARE DYING!", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+                new NetworkResetMessage("WE ARE DYING!", DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
         sendMessage(networkResetMessage);
     }
 
@@ -226,7 +227,7 @@ public class MultihopProtocol {
     }
 
     private void sendCoordinatorKeepAlive() {
-        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
         sendMessage(coordinatorAliveMessage);
     }
 
@@ -236,7 +237,7 @@ public class MultihopProtocol {
                 Address newFixedAddress = addressProvider.getNewFixedAddress();
                 addressProvider.addFixedAddress(newFixedAddress);
                 FixedAddressMessage fixedAddressMessage
-                        = new FixedAddressMessage(newFixedAddress.getFourLetterHexAddress(), 10, 0, addressProvider.getSelfAddress(), receivedMessage.getOriginalSourceAddress());
+                        = new FixedAddressMessage(newFixedAddress.getFourLetterHexAddress(), DEFAULT_TTL, 0, addressProvider.getSelfAddress(), receivedMessage.getOriginalSourceAddress());
                 sendMessage(fixedAddressMessage);
             } else {
                 String payload = receivedMessage.getPayload();
@@ -246,7 +247,7 @@ public class MultihopProtocol {
                     transceiverDevice.setSelfAddress(newFixedSelfAddress.getAddress());
 
                     AcknowledgeFixedAddressMessage acknowledgeFixedAddressMessage
-                            = new AcknowledgeFixedAddressMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getCoordinatorAddress());
+                            = new AcknowledgeFixedAddressMessage("", DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getCoordinatorAddress());
                     sendMessage(acknowledgeFixedAddressMessage);
                 } catch (NumberFormatException e) {
                     Timber.e(e, "Error parsing payload from FixedAddressMessage");
