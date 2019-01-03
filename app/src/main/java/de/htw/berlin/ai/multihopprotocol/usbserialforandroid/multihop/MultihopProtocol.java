@@ -109,16 +109,14 @@ public class MultihopProtocol {
     }
 
     private void startCoordinatorDiscovery() {
-        protocolState.postValue(ProtocolState.COORDINATOR_DISCOVERY);
-
         currentNetworkMessageListener = stringMessage -> {
             try {
                 MultihopMessage message = new MultihopMessage(stringMessage);
                 if (message.getCode().equals(CoordinatorAliveMessage.CODE)) {
                     addressProvider.addFixedAddress(message.getOriginalSourceAddress());
                 }
-            } catch (NumberFormatException e) {
-
+            } catch (Exception e) {
+                Timber.d("Error in message handling: %s", e.getMessage());
             }
         };
 
@@ -155,8 +153,8 @@ public class MultihopProtocol {
                 Timber.d("New message received: %s", stringMessage);
                 MultihopMessage multihopMessage = new MultihopMessage(stringMessage);
 
-                boolean hasMessageAlready = messageBook.addMessage(multihopMessage);
-                if (!hasMessageAlready) {
+                boolean newMessageAdded = messageBook.addMessage(multihopMessage);
+                if (newMessageAdded) {
                     switch (multihopMessage.getCode()) {
                         case CoordinatorAliveMessage.CODE:
                             CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage(stringMessage);
@@ -183,8 +181,8 @@ public class MultihopProtocol {
                     }
                 }
 
-            } catch (NumberFormatException e) {
-                Timber.e(e, "Exception in message handling");
+            } catch (Exception e) {
+                Timber.d("Exception in message handling: " + e.getMessage());
             }
         };
 
@@ -208,7 +206,7 @@ public class MultihopProtocol {
     private void sendNetworkResetMessage() {
         NetworkResetMessage networkResetMessage =
                 new NetworkResetMessage("WE ARE DYING!", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
-        transceiverDevice.send(networkResetMessage.createStringMessage());
+        sendMessage(networkResetMessage);
     }
 
     private void resetNetwork() {
@@ -229,7 +227,7 @@ public class MultihopProtocol {
 
     private void sendCoordinatorKeepAlive() {
         CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
-        transceiverDevice.send(coordinatorAliveMessage.createStringMessage());
+        sendMessage(coordinatorAliveMessage);
     }
 
     private void handleFixedAddressMessage(FixedAddressMessage receivedMessage) {
@@ -239,7 +237,7 @@ public class MultihopProtocol {
                 addressProvider.addFixedAddress(newFixedAddress);
                 FixedAddressMessage fixedAddressMessage
                         = new FixedAddressMessage(newFixedAddress.getFourLetterHexAddress(), 10, 0, addressProvider.getSelfAddress(), receivedMessage.getOriginalSourceAddress());
-                transceiverDevice.send(fixedAddressMessage.createStringMessage());
+                sendMessage(fixedAddressMessage);
             } else {
                 String payload = receivedMessage.getPayload();
                 try {
@@ -249,7 +247,7 @@ public class MultihopProtocol {
 
                     AcknowledgeFixedAddressMessage acknowledgeFixedAddressMessage
                             = new AcknowledgeFixedAddressMessage("", 10, 0, addressProvider.getSelfAddress(), addressProvider.getCoordinatorAddress());
-                    transceiverDevice.send(acknowledgeFixedAddressMessage.createStringMessage());
+                    sendMessage(acknowledgeFixedAddressMessage);
                 } catch (NumberFormatException e) {
                     Timber.e(e, "Error parsing payload from FixedAddressMessage");
                 }
@@ -271,8 +269,13 @@ public class MultihopProtocol {
         if (message.getTTL() <= message.getHoppedNodes() + 1) {
             MultihopMessage handOverMessage =
                     new MultihopMessage(message.getPayload(), message.getTTL(), message.getHoppedNodes() + 1, message.getOriginalSourceAddress(), message.getTargetAddress());
-            transceiverDevice.send(handOverMessage.createStringMessage());
+            sendMessage(handOverMessage);
         }
+    }
+
+    private void sendMessage(MultihopMessage message) {
+        messageBook.addMessage(message);
+        transceiverDevice.send(message.createStringMessage());
     }
 
     public void stop() {
