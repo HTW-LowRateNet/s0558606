@@ -20,7 +20,7 @@ import timber.log.Timber;
 public class MultihopProtocol {
 
     private static final int MAX_RETRY_COUNT = 3;
-    private static final int DEFAULT_TTL = 10;
+    private static final int DEFAULT_TTL = 3;
 
     public enum ProtocolState {
         COORDINATOR_DISCOVERY, SELF_COORDINATOR, COORDINATOR_KNOWN;
@@ -82,7 +82,8 @@ public class MultihopProtocol {
 
     private void initNetwork() {
         int retryCount = 0;
-        while (!coordinator && retryCount <= MAX_RETRY_COUNT) {
+        coordinator = true;
+        while (coordinator && retryCount <= MAX_RETRY_COUNT) {
             startCoordinatorDiscovery();
 
             try {
@@ -215,7 +216,7 @@ public class MultihopProtocol {
         messageBook = new MessageBook();
         addressProvider = new AddressProvider();
         coordinator = false;
-        initNetwork();
+        start();
     }
 
     private void handleCoordinatorDiscoveryMessage(CoordinatorDiscoveryMessage message) {
@@ -270,6 +271,7 @@ public class MultihopProtocol {
         if (message.getTTL() <= message.getHoppedNodes() + 1) {
             MultihopMessage handOverMessage =
                     new MultihopMessage(message.getPayload(), message.getTTL(), message.getHoppedNodes() + 1, message.getOriginalSourceAddress(), message.getTargetAddress());
+            message.setCode(message.getCode());
             sendMessage(handOverMessage);
         }
     }

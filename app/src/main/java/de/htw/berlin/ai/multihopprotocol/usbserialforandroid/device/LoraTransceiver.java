@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -61,7 +62,7 @@ public class LoraTransceiver implements TransceiverDevice {
         this.serialPort = serialPort;
         this.usbManager = usbManager;
 
-        networkMessageListeners = new ArrayList<>();
+        networkMessageListeners = new CopyOnWriteArrayList<>();
         serialMessageListeners = new ArrayList<>();
         serialCommandQueue = new ArrayBlockingQueue<String>(20, true);
 

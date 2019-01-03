@@ -83,4 +83,8 @@ public class MultihopMessage {
     public Address getTargetAddress() {
         return targetAddress;
     }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
 }
