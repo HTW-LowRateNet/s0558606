@@ -15,6 +15,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import ai.berlin.htw.de.seriallibrary.driver.UsbSerialDriver;
@@ -31,10 +32,10 @@ public class MultiHopActivity extends AppCompatActivity {
 
     private static UsbSerialPort sPort = null;
 
-    private TextView tvConsoleText;
+    private TextView tvMessageText, tvAllAddressText;
     private TextView tvUsbStatus, tvProtocolStatus, tvAddressStatus;
     private EditText etMessage;
-    private ScrollView scrollView;
+    private ScrollView messageScrollView, addressScrollView;
     private Button btnSend, btnConnect;
 
     private MultihopProtocol multihopProtocol;
@@ -51,8 +52,10 @@ public class MultiHopActivity extends AppCompatActivity {
 
         sPort = findSerialPort();
 
-        scrollView = findViewById(R.id.demoScroller);
-        tvConsoleText = findViewById(R.id.consoleText);
+        messageScrollView = findViewById(R.id.messageScroller);
+        tvMessageText = findViewById(R.id.messageText);
+        addressScrollView = findViewById(R.id.addressScroller);
+        tvAllAddressText = findViewById(R.id.allAddressText);
         tvUsbStatus = findViewById(R.id.tv_usb_status);
         tvAddressStatus = findViewById(R.id.tv_self_address_status);
         tvProtocolStatus = findViewById(R.id.tv_protocol_status);
@@ -89,6 +92,12 @@ public class MultiHopActivity extends AppCompatActivity {
             @Override
             public void onChanged(@Nullable Address address) {
                 tvAddressStatus.setText("Current Address: " + address.getFourLetterHexAddress());
+            }
+        });
+        multihopProtocol.getAllAddressesLiveData().observe(this, new Observer<Collection<Address>>() {
+            @Override
+            public void onChanged(@Nullable Collection<Address> addresses) {
+                updateAllAddresses(addresses);
             }
         });
 
@@ -132,12 +141,24 @@ public class MultiHopActivity extends AppCompatActivity {
 
     private void updateReceivedData(String data) {
         runOnUiThread(() -> {
-            tvConsoleText.append(data);
-            tvConsoleText.append("\r\n");
-            scrollView.smoothScrollTo(0, tvConsoleText.getBottom());
+            tvMessageText.append(data);
+            tvMessageText.append("\r\n");
+            messageScrollView.smoothScrollTo(0, tvMessageText.getBottom());
 
         });
     }
+
+    private void updateAllAddresses(Collection<Address> addresses) {
+        runOnUiThread(() -> {
+            tvAllAddressText.setText("");
+            for (Address address : addresses) {
+                tvAllAddressText.append(address.getFourLetterHexAddress());
+                tvAllAddressText.append("\r\n");
+            }
+            addressScrollView.smoothScrollTo(0, tvAllAddressText.getBottom());
+        });
+    }
+
 
     private UsbSerialPort findSerialPort() {
         final List<UsbSerialDriver> drivers = UsbSerialProber.getDefaultProber().findAllDrivers(((UsbManager) getSystemService(Context.USB_SERVICE)));

@@ -3,6 +3,8 @@ package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
 
+import java.util.Collection;
+
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.NetworkMessageListener;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.TransceiverDevice;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address.Address;
@@ -269,10 +271,8 @@ public class MultihopProtocol {
 
     private void handMessageOverToNeighbors(MultihopMessage message) {
         if (message.getTTL() <= message.getHoppedNodes() + 1) {
-            MultihopMessage handOverMessage =
-                    new MultihopMessage(message.getPayload(), message.getTTL(), message.getHoppedNodes() + 1, message.getOriginalSourceAddress(), message.getTargetAddress());
-            message.setCode(message.getCode());
-            sendMessage(handOverMessage);
+            message.setHoppedNodes(message.getHoppedNodes() + 1);
+            sendMessage(message);
         }
     }
 
@@ -294,6 +294,12 @@ public class MultihopProtocol {
     public LiveData<Address> getSelfAddressLiveData() {
         return addressProvider.getSelfAddressLiveData();
     }
+
+    public LiveData<Collection<Address>> getAllAddressesLiveData() {
+        return addressProvider.getAllAddressesLiveData();
+    }
+
+
 
     class CoordinatorHandler implements Runnable {
         @Override
