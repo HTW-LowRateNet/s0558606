@@ -68,7 +68,7 @@ public class MultihopProtocol {
 
         } else {
             chooseTempAddressForSelf();
-            requestFixedAddressFromCoordinator();
+            requestFixedAddressFromCoordinator(); // TODO add recurring requests if no answer was received
         }
     }
 
