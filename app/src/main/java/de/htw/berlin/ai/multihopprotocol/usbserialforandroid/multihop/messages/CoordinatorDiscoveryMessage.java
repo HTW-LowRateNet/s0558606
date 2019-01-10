@@ -13,6 +13,7 @@ public class CoordinatorDiscoveryMessage extends MultihopMessage {
 
     public CoordinatorDiscoveryMessage(String message) throws NumberFormatException {
         super(message);
+        code = CODE;
     }
 
 }

@@ -228,7 +228,7 @@ public class MultihopProtocol {
     }
 
     private void sendCoordinatorKeepAlive() {
-        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("Captain Marcel is coordinating!", DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
         sendMessage(coordinatorAliveMessage);
     }
 
@@ -289,6 +289,10 @@ public class MultihopProtocol {
 
     public LiveData<ProtocolState> getProtocolState() {
         return protocolState;
+    }
+
+    public LiveData<Address> getSelfAddressLiveData() {
+        return addressProvider.getSelfAddressLiveData();
     }
 
     class CoordinatorHandler implements Runnable {

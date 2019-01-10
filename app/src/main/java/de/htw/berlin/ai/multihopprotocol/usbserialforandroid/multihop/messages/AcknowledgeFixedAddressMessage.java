@@ -13,6 +13,7 @@ public class AcknowledgeFixedAddressMessage extends MultihopMessage {
 
     public AcknowledgeFixedAddressMessage(String message) throws NumberFormatException {
         super(message);
+        code = CODE;
     }
 
 }

@@ -13,5 +13,6 @@ public class TextMessage extends MultihopMessage {
 
     public TextMessage(String message) throws NumberFormatException {
         super(message);
+        code = CODE;
     }
 }

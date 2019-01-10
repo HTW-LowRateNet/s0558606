@@ -24,6 +24,7 @@ import de.htw.berlin.ai.multihopprotocol.R;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.LoraTransceiver;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.TransceiverDevice;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.MultihopProtocol;
+import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address.Address;
 import timber.log.Timber;
 
 public class MultiHopActivity extends AppCompatActivity {
@@ -31,7 +32,7 @@ public class MultiHopActivity extends AppCompatActivity {
     private static UsbSerialPort sPort = null;
 
     private TextView tvConsoleText;
-    private TextView tvUsbStatus, tvProtocolStatus;
+    private TextView tvUsbStatus, tvProtocolStatus, tvAddressStatus;
     private EditText etMessage;
     private ScrollView scrollView;
     private Button btnSend, btnConnect;
@@ -50,6 +51,23 @@ public class MultiHopActivity extends AppCompatActivity {
 
         sPort = findSerialPort();
 
+        scrollView = findViewById(R.id.demoScroller);
+        tvConsoleText = findViewById(R.id.consoleText);
+        tvUsbStatus = findViewById(R.id.tv_usb_status);
+        tvAddressStatus = findViewById(R.id.tv_self_address_status);
+        tvProtocolStatus = findViewById(R.id.tv_protocol_status);
+        etMessage = findViewById(R.id.et_message_input);
+        btnConnect = findViewById(R.id.btn_connect);
+        btnConnect.setOnClickListener(v -> startProtocol());
+        btnSend = findViewById(R.id.btn_send);
+        btnSend.setOnClickListener(v -> {
+            if (!etMessage.getText().toString().equals("")) {
+                String data = etMessage.getText().toString().trim();
+
+                multihopProtocol.sendTextMessage(data);
+            }
+        });
+
         transceiverDevice = new LoraTransceiver(sPort, (UsbManager) getSystemService(Context.USB_SERVICE));
         multihopProtocol = new MultihopProtocol(transceiverDevice);
 
@@ -67,24 +85,15 @@ public class MultiHopActivity extends AppCompatActivity {
                 tvProtocolStatus.setText(protocolState.toString());
             }
         });
+        multihopProtocol.getSelfAddressLiveData().observe(this, new Observer<Address>() {
+            @Override
+            public void onChanged(@Nullable Address address) {
+                tvAddressStatus.setText("Current Address: " + address.getFourLetterHexAddress());
+            }
+        });
 
         requestUserPermission();
 
-        scrollView = findViewById(R.id.demoScroller);
-        tvConsoleText = findViewById(R.id.consoleText);
-        tvUsbStatus = findViewById(R.id.tv_usb_status);
-        tvProtocolStatus = findViewById(R.id.tv_protocol_status);
-        etMessage = findViewById(R.id.et_message_input);
-        btnConnect = findViewById(R.id.btn_connect);
-        btnConnect.setOnClickListener(v -> startProtocol());
-        btnSend = findViewById(R.id.btn_send);
-        btnSend.setOnClickListener(v -> {
-            if (!etMessage.getText().toString().equals("")) {
-                String data = etMessage.getText().toString().trim();
-
-                multihopProtocol.sendTextMessage(data);
-            }
-        });
     }
 
     @Override

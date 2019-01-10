@@ -1,5 +1,7 @@
 package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address;
 
+import android.arch.lifecycle.MutableLiveData;
+
 import java.util.Collection;
 import java.util.Random;
 
@@ -8,9 +10,9 @@ public class AddressProvider {
     public static final int COORDINATOR_ADDRESS = 0x0000;
 
     public static final int TEMP_ADDRESS_LOWER_BOUND = 0x0011;
-    public static final int TEMP_ADDRESS_UPPER_BOUND = 0x00FF;
+    public static final int TEMP_ADDRESS_UPPER_BOUND = 0x0FFF;
 
-    public static final int FIXED_ADDRESS_LOWER_BOUND = 0x0100;
+    public static final int FIXED_ADDRESS_LOWER_BOUND = 0x1000;
     public static final int FIXED_ADDRESS_UPPER_BOUND = 0xFFFE;
 
     public static final int BROADCAST_ADDRESS = 0xFFFF;
@@ -20,9 +22,13 @@ public class AddressProvider {
 
     private Address selfAddress;
 
+    private MutableLiveData<Address> selfAddressLiveData;
+
     public AddressProvider() {
         temporaryAddresses = new AddressBook();
         fixedAddresses = new AddressBook();
+
+        selfAddressLiveData = new MutableLiveData<>();
     }
 
     public Address getNewTemporaryAddress() {
@@ -76,5 +82,10 @@ public class AddressProvider {
 
     public void setSelfAddress(Address selfAddress) {
         this.selfAddress = selfAddress;
+        selfAddressLiveData.postValue(selfAddress);
+    }
+
+    public MutableLiveData<Address> getSelfAddressLiveData() {
+        return selfAddressLiveData;
     }
 }
