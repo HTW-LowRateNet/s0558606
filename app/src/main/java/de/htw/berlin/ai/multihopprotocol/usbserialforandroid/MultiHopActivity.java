@@ -50,6 +50,9 @@ public class MultiHopActivity extends AppCompatActivity {
 
         sPort = findSerialPort();
 
+        if (sPort == null)
+            return;
+
         transceiverDevice = new LoraTransceiver(sPort, (UsbManager) getSystemService(Context.USB_SERVICE));
         multihopProtocol = new MultihopProtocol(transceiverDevice);
 
@@ -92,7 +95,6 @@ public class MultiHopActivity extends AppCompatActivity {
         super.onResume();
         Timber.d("Resumed, port=%s", sPort);
         onDeviceStateChange();
-
     }
 
     @Override
@@ -117,8 +119,10 @@ public class MultiHopActivity extends AppCompatActivity {
     }
 
     private void onDeviceStateChange() {
-        transceiverDevice.stop();
-        transceiverDevice.start();
+        if (transceiverDevice != null) {
+            transceiverDevice.stop();
+            transceiverDevice.start();
+        }
     }
 
     private void updateReceivedData(String data) {
@@ -140,7 +144,10 @@ public class MultiHopActivity extends AppCompatActivity {
             result.addAll(ports);
         }
 
-        return result.get(0);
+        if (result.size() > 0)
+            return result.get(0);
+        else
+            return null;
     }
 
 }

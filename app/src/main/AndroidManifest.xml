@@ -25,26 +25,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".usbserialforandroid.DeviceListActivity"
-            android:label="@string/title_activity_device_list">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
-            </intent-filter>
-        </activity>
 
         <service
             android:name=".usbserial.UsbService"
             android:enabled="true" />
 
-        <activity
-            android:name=".usbserialforandroid.SerialCommunicationActivity"
-            android:label="@string/title_activity_serial_communication"
-            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".usbserialforandroid.MultiHopActivity"
             android:label="@string/title_activity_multi_hop"
