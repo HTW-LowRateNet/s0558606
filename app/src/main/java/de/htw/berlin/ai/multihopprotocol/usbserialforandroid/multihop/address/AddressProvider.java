@@ -39,7 +39,7 @@ public class AddressProvider {
         Random random = new Random();
         Address newAddress;
         do {
-            newAddress = new Address(FIXED_ADDRESS_LOWER_BOUND + random.nextInt(FIXED_ADDRESS_UPPER_BOUND));
+            newAddress = new Address(FIXED_ADDRESS_LOWER_BOUND + random.nextInt(FIXED_ADDRESS_UPPER_BOUND - FIXED_ADDRESS_LOWER_BOUND));
         } while (fixedAddresses.hasAddress(newAddress));
         fixedAddresses.addAddress(newAddress);
 

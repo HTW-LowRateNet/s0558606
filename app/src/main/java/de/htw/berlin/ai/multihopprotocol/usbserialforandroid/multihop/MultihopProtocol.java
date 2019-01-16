@@ -22,6 +22,9 @@ public class MultihopProtocol {
     private static final int MAX_RETRY_COUNT = 3;
     private static final int DEFAULT_TTL = 3;
 
+    private static final int ALIVE_MESSAGE_DELAY = 60000;
+    private static final int REQUEST_ADDRESS_DELAY = 10000;
+
     public enum ProtocolState {
         COORDINATOR_DISCOVERY, SELF_COORDINATOR, COORDINATOR_KNOWN;
     }
@@ -39,7 +42,7 @@ public class MultihopProtocol {
 
     NetworkMessageListener currentNetworkMessageListener;
 
-    private Thread coordinatorThread;
+    private Thread coordinatorThread, requestFixedAddressThread;
 
     public MultihopProtocol(TransceiverDevice transceiverDevice) {
         this.transceiverDevice = transceiverDevice;
@@ -66,7 +69,8 @@ public class MultihopProtocol {
 
         } else {
             chooseTempAddressForSelf();
-            requestFixedAddressFromCoordinator();
+
+            startRequestFixedAddressThread();
         }
     }
 
@@ -78,6 +82,11 @@ public class MultihopProtocol {
     private void startCoordinatorThread() {
         coordinatorThread = new Thread(new CoordinatorHandler());
         coordinatorThread.start();
+    }
+
+    private void startRequestFixedAddressThread() {
+        requestFixedAddressThread = new Thread(new RequestFixedAddressHandler());
+        requestFixedAddressThread.start();
     }
 
     private void initNetwork() {
@@ -250,6 +259,8 @@ public class MultihopProtocol {
                     AcknowledgeFixedAddressMessage acknowledgeFixedAddressMessage
                             = new AcknowledgeFixedAddressMessage("", DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getCoordinatorAddress());
                     sendMessage(acknowledgeFixedAddressMessage);
+
+                    requestFixedAddressThread.interrupt();
                 } catch (NumberFormatException e) {
                     Timber.e(e, "Error parsing payload from FixedAddressMessage");
                 }
@@ -298,10 +309,25 @@ public class MultihopProtocol {
                 sendCoordinatorKeepAlive();
 
                 try {
-                    Thread.sleep(60000);
+                    Thread.sleep(ALIVE_MESSAGE_DELAY);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+    }
+
+    class RequestFixedAddressHandler implements Runnable {
+        @Override
+        public void run() {
+            try {
+                while (running) {
+                    requestFixedAddressFromCoordinator();
+
+                    Thread.sleep(REQUEST_ADDRESS_DELAY);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
