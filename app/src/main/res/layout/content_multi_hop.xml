@@ -33,6 +33,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_protocol_status" />
 
+    <TextView
+        android:id="@+id/tv_self_address_status"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:textAlignment="center"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@+id/btn_connect"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_usb_status" />
+
     <Button
         android:id="@+id/btn_connect"
         android:layout_width="wrap_content"
@@ -54,9 +67,9 @@
         android:inputType="textPersonName"
         android:textAlignment="center"
         app:layout_constraintEnd_toStartOf="@+id/btn_send"
-        app:layout_constraintHorizontal_bias="0.579"
+        app:layout_constraintHorizontal_bias="0.506"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_usb_status" />
+        app:layout_constraintTop_toBottomOf="@+id/tv_self_address_status" />
 
     <Button
         android:id="@+id/btn_send"
@@ -68,18 +81,36 @@
         app:layout_constraintTop_toBottomOf="@+id/tv_usb_status" />
 
     <ScrollView
-        android:id="@+id/demoScroller"
+        android:id="@+id/messageScroller"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/addressScroller"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/et_message_input">
 
         <TextView
-            android:id="@+id/consoleText"
+            android:id="@+id/messageText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textIsSelectable="true"
+            android:typeface="monospace" />
+    </ScrollView>
+
+    <ScrollView
+        android:id="@+id/addressScroller"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/messageScroller">
+
+        <TextView
+            android:id="@+id/allAddressText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textIsSelectable="true"

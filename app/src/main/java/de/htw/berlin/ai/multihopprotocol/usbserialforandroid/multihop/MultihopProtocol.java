@@ -3,6 +3,8 @@ package de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
 
+import java.util.Collection;
+
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.NetworkMessageListener;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.device.TransceiverDevice;
 import de.htw.berlin.ai.multihopprotocol.usbserialforandroid.multihop.address.Address;
@@ -237,7 +239,7 @@ public class MultihopProtocol {
     }
 
     private void sendCoordinatorKeepAlive() {
-        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("", DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
+        CoordinatorAliveMessage coordinatorAliveMessage = new CoordinatorAliveMessage("Captain Marcel is coordinating!", DEFAULT_TTL, 0, addressProvider.getSelfAddress(), addressProvider.getBroadcastAddress());
         sendMessage(coordinatorAliveMessage);
     }
 
@@ -280,10 +282,8 @@ public class MultihopProtocol {
 
     private void handMessageOverToNeighbors(MultihopMessage message) {
         if (message.getTTL() <= message.getHoppedNodes() + 1) {
-            MultihopMessage handOverMessage =
-                    new MultihopMessage(message.getPayload(), message.getTTL(), message.getHoppedNodes() + 1, message.getOriginalSourceAddress(), message.getTargetAddress());
-            message.setCode(message.getCode());
-            sendMessage(handOverMessage);
+            message.setHoppedNodes(message.getHoppedNodes() + 1);
+            sendMessage(message);
         }
     }
 

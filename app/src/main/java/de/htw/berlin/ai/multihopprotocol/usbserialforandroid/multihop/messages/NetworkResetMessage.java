@@ -13,6 +13,7 @@ public class NetworkResetMessage extends MultihopMessage {
 
     public NetworkResetMessage(String message) throws NumberFormatException {
         super(message);
+        code = CODE;
     }
 
 }

@@ -87,4 +87,8 @@ public class MultihopMessage {
     public void setCode(String code) {
         this.code = code;
     }
+
+    public void setHoppedNodes(int hoppedNodes) {
+        this.hoppedNodes = hoppedNodes;
+    }
 }

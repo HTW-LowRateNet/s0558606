@@ -13,5 +13,6 @@ public class CoordinatorAliveMessage extends MultihopMessage {
 
     public CoordinatorAliveMessage(String message) throws NumberFormatException {
         super(message);
+        code = CODE;
     }
 }
